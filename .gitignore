@@ -1,0 +1,18 @@
+# CuffedOrNot
+
+# Config (contains API keys)
+config.js
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+.vscode/
+.idea/
+
+# Deploy staging
+deploy/
+
+# Node
+node_modules/

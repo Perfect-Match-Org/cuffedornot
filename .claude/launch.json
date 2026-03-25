@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "source-dev",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3000", "."],
+      "port": 3000
+    },
+    {
+      "name": "deploy-preview",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "3001", "deploy"],
+      "port": 3001
+    }
+  ]
+}
