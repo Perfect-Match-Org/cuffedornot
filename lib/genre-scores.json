@@ -26,7 +26,6 @@
   "metal": 0.65,
   "hardcore": 0.60,
   "punk": 0.55,
-  "hip hop": 0.40,
   "rap": 0.38,
   "r&b": 0.45,
   "soul": 0.50,
@@ -42,7 +41,6 @@
   "melancholic": 0.88,
   "baroque pop": 0.52,
   "chamber pop": 0.55,
-  "neo-soul": 0.50,
   "chillwave": 0.58,
   "vapor soul": 0.55,
   "indie folk": 0.62,
@@ -358,7 +356,6 @@
   "relaxing": 0.40,
   "happy": 0.15,
   "uplifting": 0.15,
-  "romantic": 0.38,
   "sensual": 0.38,
   "quiet": 0.58,
   "slow": 0.60
