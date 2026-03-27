@@ -1,11 +1,14 @@
-import { AudioFeature, AudioFeatureAverages, GenreCount, SpotifyArtist } from '@/types/spotify';
+import { AudioFeature, AudioFeatureAverages, GenreCount, SpotifyArtist, SpotifyTrack } from '@/types/spotify';
 
 function parseReleaseYear(releaseDate: string): number {
     // Handles YYYY, YYYY-MM, YYYY-MM-DD
     return parseInt(releaseDate.split('-')[0], 10);
 }
 
-export function computeAudioFeatureAverages(features: (AudioFeature | null)[]): AudioFeatureAverages {
+export function computeAudioFeatureAverages(
+    features: (AudioFeature | null)[],
+    tracks: SpotifyTrack[] = []
+): AudioFeatureAverages {
     const valid = features.filter((f): f is AudioFeature => f !== null);
 
     if (valid.length === 0) {
@@ -22,6 +25,7 @@ export function computeAudioFeatureAverages(features: (AudioFeature | null)[]): 
             mode: 0,
             minorRatio: 0,
             avgTrackAgeYears: 0,
+            avgPopularity: 0,
         };
     }
 
@@ -31,6 +35,10 @@ export function computeAudioFeatureAverages(features: (AudioFeature | null)[]): 
 
     const minorCount = valid.filter((f) => f.mode === 0).length;
     const minorRatio = minorCount / n;
+
+    const avgPopularity = tracks.length > 0
+        ? tracks.reduce((acc, t) => acc + (t.popularity ?? 0), 0) / tracks.length
+        : 0;
 
     return {
         danceability: sum('danceability') / n,
@@ -45,6 +53,7 @@ export function computeAudioFeatureAverages(features: (AudioFeature | null)[]): 
         mode: sum('mode') / n,
         minorRatio,
         avgTrackAgeYears: 0, // computed separately — requires track release dates
+        avgPopularity,
     };
 }
 

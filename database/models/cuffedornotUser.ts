@@ -19,6 +19,7 @@ export interface ISpotifyData {
 export interface IScores {
     cuffedOrNotScore?: number;
     verdict?: string;
+    tagline?: string;
     confidence?: number;
     esValue?: number;
     rentfrowVector?: number[];
@@ -58,6 +59,7 @@ const audioFeatureAveragesSchema = new Schema<AudioFeatureAverages>(
         mode: Number,
         minorRatio: Number,
         avgTrackAgeYears: Number,
+        avgPopularity: Number,
     },
     { _id: false }
 );
@@ -92,6 +94,7 @@ const scoresSchema = new Schema<IScores>(
     {
         cuffedOrNotScore: Number,
         verdict: String,
+        tagline: String,
         confidence: Number,
         esValue: Number,
         rentfrowVector: [Number],

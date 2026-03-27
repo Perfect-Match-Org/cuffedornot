@@ -1,6 +1,7 @@
 export interface SpotifyTrack {
     id: string;
     name: string;
+    popularity: number;
     album: {
         release_date: string;
     };
@@ -41,6 +42,7 @@ export interface AudioFeatureAverages {
     mode: number;
     minorRatio: number;
     avgTrackAgeYears: number;
+    avgPopularity: number;
 }
 
 export interface GenreCount {
@@ -53,6 +55,23 @@ export interface SpotifyTimeRange {
     artistIds: string[];
     audioFeatureAverages: AudioFeatureAverages;
     topGenres: GenreCount[];
+}
+
+export interface SignalBreakdown {
+    signal1: number;
+    signal2: number | null;
+    signal3: number | null;
+    signal4: number | null;
+    signal5: number;
+}
+
+export interface ScoreResult {
+    score: number;
+    verdict: string;
+    tagline: string;
+    confidence: number;
+    breakdown: SignalBreakdown;
+    evidenceBullets: string[];
 }
 
 // Typed error classes

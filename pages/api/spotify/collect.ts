@@ -9,6 +9,13 @@ import {
     extractTopGenres,
 } from '@/lib/spotifyProcess';
 import {
+    computeFinalScore,
+    computeESValue,
+    computeRentfrowVector,
+    computeMoodQuadrant,
+} from '@/lib/score';
+import { generateEvidenceBullets } from '@/lib/evidenceBullets';
+import {
     SpotifyTrack,
     SpotifyArtist,
     AudioFeature,
@@ -17,8 +24,6 @@ import {
     SpotifyRateLimitError,
     CollectError,
 } from '@/types/spotify';
-
-const TIME_RANGES = ['short_term', 'medium_term', 'long_term'] as const;
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
     if (req.method !== 'POST') {
@@ -127,7 +132,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                 .filter((f): f is AudioFeature => f !== null);
 
             const releaseDates = tracks.map((t) => t.album.release_date);
-            const avgs = computeAudioFeatureAverages(rangeFeatures);
+            const avgs = computeAudioFeatureAverages(rangeFeatures, tracks);
             avgs.avgTrackAgeYears = computeAvgTrackAgeYears(releaseDates);
 
             return {
@@ -140,7 +145,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
         const [shortRange, mediumRange, longRange] = spotifyTimeRanges;
 
-        // 8. Persist to MongoDB
+        // 8. Persist spotify data to MongoDB
         await CuffedOrNotUser.findOneAndUpdate(
             { email: session.user.email },
             {
@@ -153,13 +158,49 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             }
         );
 
+        // 9. Compute scores
+        const spotifyDataForScoring = {
+            shortTerm: shortRange,
+            mediumTerm: mediumRange,
+            longTerm: longRange,
+        };
+
+        const scoreResult = computeFinalScore(spotifyDataForScoring);
+        if (!scoreResult) {
+            return res.status(200).json({ error: 'SPOTIFY_INSUFFICIENT_DATA' } satisfies CollectError);
+        }
+
+        const esValue = computeESValue(shortRange.audioFeatureAverages, shortRange.topGenres);
+        const rentfrowVector = computeRentfrowVector(shortRange.audioFeatureAverages, shortRange.topGenres);
+        const moodQuadrant = computeMoodQuadrant(shortRange.audioFeatureAverages);
+        const evidenceBullets = generateEvidenceBullets(scoreResult.breakdown, spotifyDataForScoring);
+
+        // 10. Persist scores
+        await CuffedOrNotUser.findOneAndUpdate(
+            { email: session.user.email },
+            {
+                $set: {
+                    scores: {
+                        cuffedOrNotScore: scoreResult.score,
+                        verdict: scoreResult.verdict,
+                        tagline: scoreResult.tagline,
+                        confidence: scoreResult.confidence,
+                        esValue,
+                        rentfrowVector: Array.from(rentfrowVector),
+                        moodQuadrant,
+                    },
+                },
+            }
+        );
+
         return res.status(200).json({
             success: true,
-            summary: {
-                shortTermTracks: shortRange.trackIds.length,
-                mediumTermTracks: mediumRange.trackIds.length,
-                longTermTracks: longRange.trackIds.length,
-            },
+            score: scoreResult.score,
+            verdict: scoreResult.verdict,
+            tagline: scoreResult.tagline,
+            confidence: scoreResult.confidence,
+            breakdown: scoreResult.breakdown,
+            evidenceBullets,
         });
     } catch (err) {
         if (err instanceof SpotifyAuthError) {
