@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { ScoreResult } from '@/types/spotify';
 import ReceiptifyInstructions from './ReceiptifyInstructions';
 import ReceiptifyForm from './ReceiptifyForm';
@@ -25,7 +25,6 @@ export default function MainFlow() {
     const [state, setState] = useState<FlowState>({ phase: 'loading_me' });
     const [optInOpen, setOptInOpen] = useState(true);
     const [alreadyOptedIn, setAlreadyOptedIn] = useState(false);
-    const countdownRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
     useEffect(() => {
         fetch('/api/me')
@@ -58,22 +57,19 @@ export default function MainFlow() {
 
     // Live countdown for rate_limited state
     useEffect(() => {
-        if (state.phase !== 'rate_limited') {
-            if (countdownRef.current) clearInterval(countdownRef.current);
-            return;
-        }
-        countdownRef.current = setInterval(() => {
+        if (state.phase !== 'rate_limited') return;
+        const intervalId = setInterval(() => {
             setState((prev) => {
                 if (prev.phase !== 'rate_limited') return prev;
                 if (prev.retryAfter <= 1) {
-                    clearInterval(countdownRef.current!);
+                    clearInterval(intervalId);
                     return { phase: 'rate_limited', retryAfter: 0 };
                 }
                 return { phase: 'rate_limited', retryAfter: prev.retryAfter - 1 };
             });
         }, 1000);
-        return () => { if (countdownRef.current) clearInterval(countdownRef.current); };
-    }, [state.phase === 'rate_limited']);
+        return () => clearInterval(intervalId);
+    }, [state.phase]);
 
     const handleSubmit = async (accessToken: string) => {
         setState({ phase: 'submitting' });
