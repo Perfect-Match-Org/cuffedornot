@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
     session: { strategy: 'jwt' },
     callbacks: {
         async signIn({ profile }) {
-            if (!profile || !isValidCornellEmail(profile.email!)) {
+            if (!profile || !profile.email || !isValidCornellEmail(profile.email)) {
                 return false;
             }
 
@@ -28,23 +28,26 @@ export const authOptions: NextAuthOptions = {
                 await connect();
                 const existing = await CuffedOrNotUser.findOne({ email: profile.email });
                 if (!existing) {
-                    // Try to get firstName from main users collection
                     let firstName: string | undefined;
-                    try {
-                        const db = mongoose.connection.db;
-                        const mainUser = await db
-                            .collection('users')
-                            .findOne(
-                                { email: profile.email },
-                                { projection: { 'profile.firstName': 1 } }
-                            );
-                        firstName = mainUser?.profile?.firstName;
-                    } catch {
-                        // ignore — fallback below
+                    const db = mongoose.connection.db;
+                    if (db) {
+                        try {
+                            const mainUser = await db
+                                .collection('users')
+                                .findOne(
+                                    { email: profile.email },
+                                    { projection: { 'profile.firstName': 1 } }
+                                );
+                            firstName = (mainUser as any)?.profile?.firstName;
+                        } catch {
+                            // ignore — fallback below
+                        }
                     }
 
                     if (!firstName) {
-                        firstName = (profile as any).given_name || profile.name?.split(' ')[0] || '';
+                        // Google OIDC profile has given_name, family_name, name
+                        const googleProfile = profile as { given_name?: string; name?: string };
+                        firstName = googleProfile.given_name || profile.name?.split(' ')[0] || '';
                     }
 
                     await CuffedOrNotUser.create({

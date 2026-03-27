@@ -1,6 +1,50 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
+import { AudioFeatureAverages, GenreCount } from '@/types/spotify';
 
-const audioFeatureAveragesSchema = new Schema(
+export interface ISpotifyTimeRange {
+    trackIds: string[];
+    artistIds: string[];
+    audioFeatureAverages: AudioFeatureAverages;
+    topGenres: GenreCount[];
+}
+
+export interface ISpotifyData {
+    lastAttemptAt?: Date;
+    collectedAt?: Date;
+    shortTerm?: ISpotifyTimeRange;
+    mediumTerm?: ISpotifyTimeRange;
+    longTerm?: ISpotifyTimeRange;
+}
+
+export interface IScores {
+    cuffedOrNotScore?: number;
+    verdict?: string;
+    confidence?: number;
+    esValue?: number;
+    rentfrowVector?: number[];
+    moodQuadrant?: string;
+}
+
+export interface IProfile {
+    genderIdentity?: string;
+    attractionPreference?: string[];
+    openToPlatonic?: boolean;
+}
+
+export interface ICuffedOrNotUser extends Document {
+    email: string;
+    firstName?: string;
+    profileComplete: boolean;
+    profile?: IProfile;
+    spotifyData?: ISpotifyData;
+    scores?: IScores;
+    optIn: boolean;
+    matchedWith?: string | null;
+    matchPlatonic?: boolean;
+    unmatchable?: boolean;
+}
+
+const audioFeatureAveragesSchema = new Schema<AudioFeatureAverages>(
     {
         danceability: Number,
         energy: Number,
@@ -18,12 +62,12 @@ const audioFeatureAveragesSchema = new Schema(
     { _id: false }
 );
 
-const genreCountSchema = new Schema(
+const genreCountSchema = new Schema<GenreCount>(
     { genre: String, count: Number },
     { _id: false }
 );
 
-const spotifyTimeRangeSchema = new Schema(
+const spotifyTimeRangeSchema = new Schema<ISpotifyTimeRange>(
     {
         trackIds: [String],
         artistIds: [String],
@@ -33,7 +77,7 @@ const spotifyTimeRangeSchema = new Schema(
     { _id: false }
 );
 
-const spotifyDataSchema = new Schema(
+const spotifyDataSchema = new Schema<ISpotifyData>(
     {
         lastAttemptAt: Date,
         collectedAt: Date,
@@ -44,7 +88,7 @@ const spotifyDataSchema = new Schema(
     { _id: false }
 );
 
-const scoresSchema = new Schema(
+const scoresSchema = new Schema<IScores>(
     {
         cuffedOrNotScore: Number,
         verdict: String,
@@ -56,7 +100,7 @@ const scoresSchema = new Schema(
     { _id: false }
 );
 
-const profileSchema = new Schema(
+const profileSchema = new Schema<IProfile>(
     {
         genderIdentity: String,
         attractionPreference: [String],
@@ -65,7 +109,7 @@ const profileSchema = new Schema(
     { _id: false }
 );
 
-const cuffedOrNotUserSchema = new Schema({
+const cuffedOrNotUserSchema = new Schema<ICuffedOrNotUser>({
     email: { type: String, required: true, unique: true },
     firstName: String,
     profileComplete: { type: Boolean, default: false },
@@ -80,6 +124,6 @@ const cuffedOrNotUserSchema = new Schema({
 
 cuffedOrNotUserSchema.index({ optIn: 1, profileComplete: 1, 'spotifyData.collectedAt': 1 });
 
-export const CuffedOrNotUser: Model<Document> =
-    mongoose.models.cuffedornot_user ||
-    mongoose.model('cuffedornot_user', cuffedOrNotUserSchema, 'cuffedornot_users');
+export const CuffedOrNotUser: Model<ICuffedOrNotUser> =
+    (mongoose.models.cuffedornot_user as Model<ICuffedOrNotUser>) ||
+    mongoose.model<ICuffedOrNotUser>('cuffedornot_user', cuffedOrNotUserSchema, 'cuffedornot_users');
