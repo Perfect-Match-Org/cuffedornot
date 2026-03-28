@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { AudioFeatureAverages, RedFlagArtist, ScoreResult } from '@/types/spotify';
+import { useConfig } from '@/hooks/useConfig';
 import ReceiptifyInstructions from './ReceiptifyInstructions';
 import ReceiptifyForm from './ReceiptifyForm';
 import VerdictCard from './VerdictCard';
@@ -53,14 +54,22 @@ function buildScoreResult(data: Record<string, unknown>): ScoreResult {
 
 export default function MainFlow() {
     const [state, setState] = useState<FlowState>({ phase: 'loading_me' });
-    const [optInOpen, setOptInOpen] = useState(true);
+    // useConfig re-fetches on window focus — see docs/ideas-and-optimizations.md
+    const config = useConfig();
     const [alreadyOptedIn, setAlreadyOptedIn] = useState(false);
+
+    // Sync optInOpen into results phase state whenever the poll fires
+    useEffect(() => {
+        if (config === null) return;
+        setState((prev) =>
+            prev.phase === 'results' ? { ...prev, optInOpen: config.optInOpen } : prev
+        );
+    }, [config?.optInOpen]);
 
     useEffect(() => {
         fetch('/api/me')
             .then((r) => r.json())
             .then((data) => {
-                setOptInOpen(data.config?.optInOpen ?? true);
                 setAlreadyOptedIn(data.optIn ?? false);
                 if (data.scores?.cuffedOrNotScore != null) {
                     setState({
@@ -69,6 +78,7 @@ export default function MainFlow() {
                         optInOpen: data.config?.optInOpen ?? true,
                         alreadyOptedIn: data.optIn ?? false,
                     });
+                    // Note: subsequent polls via useConfig will keep optInOpen up-to-date
                 } else {
                     setState({ phase: 'idle' });
                 }
@@ -105,7 +115,7 @@ export default function MainFlow() {
         setState({
             phase: 'results',
             result: buildScoreResult(data),
-            optInOpen,
+            optInOpen: config?.optInOpen ?? true,
             alreadyOptedIn,
         });
     };
@@ -125,7 +135,7 @@ export default function MainFlow() {
                 setState({
                     phase: 'results',
                     result: INSUFFICIENT_RESULT,
-                    optInOpen,
+                    optInOpen: config?.optInOpen ?? true,
                     alreadyOptedIn,
                 });
                 break;

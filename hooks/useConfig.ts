@@ -6,7 +6,13 @@ interface AppConfig {
     matchingRun: boolean;
 }
 
-export function useConfig(pollIntervalMs = 30_000) {
+/**
+ * Fetches /api/me on mount and re-fetches whenever the window regains focus.
+ * Future optimisation: replace the /api/me call with a dedicated /api/config
+ * endpoint that returns only the three boolean flags, avoiding a full DB user
+ * lookup on every revalidation.
+ */
+export function useConfig() {
     const [config, setConfig] = useState<AppConfig | null>(null);
 
     const fetchConfig = useCallback(async () => {
@@ -28,9 +34,9 @@ export function useConfig(pollIntervalMs = 30_000) {
 
     useEffect(() => {
         fetchConfig();
-        const id = setInterval(fetchConfig, pollIntervalMs);
-        return () => clearInterval(id);
-    }, [fetchConfig, pollIntervalMs]);
+        window.addEventListener('focus', fetchConfig);
+        return () => window.removeEventListener('focus', fetchConfig);
+    }, [fetchConfig]);
 
     return config;
 }
