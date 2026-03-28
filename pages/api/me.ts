@@ -31,6 +31,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         config: {
             optInOpen: config.optInOpen,
             matchesReleased: config.matchesReleased,
+            matchingRun: config.matchingRun,
         },
     });
 }
