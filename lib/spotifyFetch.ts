@@ -2,6 +2,7 @@ import { SpotifyAuthError, SpotifyRateLimitError, SpotifyFetchError } from '@/ty
 
 const SPOTIFY_API_BASE = 'https://api.spotify.com';
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function spotifyFetch(accessToken: string, path: string): Promise<any> {
     const res = await fetch(`${SPOTIFY_API_BASE}${path}`, {
         headers: {
