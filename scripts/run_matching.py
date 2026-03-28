@@ -260,7 +260,7 @@ def run_romantic_pass(
     matches: list[MatchResult] = []
     for r, c in zip(row_ind, col_ind):
         if (
-            score_matrix[r, c] > 0
+            score_matrix[r, c] >= 0
             and r != c
             and r not in matched
             and c not in matched
@@ -300,7 +300,7 @@ def run_platonic_pass(
     matches: list[MatchResult] = []
     for r, c in zip(row_ind, col_ind):
         if (
-            sub[r, c] > 0
+            sub[r, c] >= 0
             and r != c
             and r not in matched_local
             and c not in matched_local
@@ -319,18 +319,20 @@ def run_platonic_pass(
 
 
 def assign_ghost(remaining: list[int], users: list[dict]) -> list[MatchResult]:
-    """Assign the lone leftover user (if any) to the McGraw Tower ghost."""
+    """Assign any leftover users to the McGraw Tower ghost."""
     if not remaining:
         return []
-    ghost_idx = remaining[-1]
-    email = users[ghost_idx]["email"]
-    print(f"Ghost match assigned to {email}")
-    return [MatchResult(
-        email_a=GHOST_EMAIL,
-        email_b=email,
-        score=0.0,
-        ghost=True,
-    )]
+    matches = []
+    for idx in remaining:
+        email = users[idx]["email"]
+        print(f"Ghost match assigned to {email}")
+        matches.append(MatchResult(
+            email_a=GHOST_EMAIL,
+            email_b=email,
+            score=0.0,
+            ghost=True,
+        ))
+    return matches
 
 
 def run_small_pool(users: list[dict]) -> list[MatchResult]:
