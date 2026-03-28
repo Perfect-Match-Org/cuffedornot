@@ -50,9 +50,21 @@ export interface GenreCount {
     count: number;
 }
 
+export interface TrackMeta {
+    name: string;
+    artist: string;
+}
+
+export interface RedFlagArtist {
+    name: string;
+    roast: string;
+}
+
 export interface SpotifyTimeRange {
     trackIds: string[];
     artistIds: string[];
+    trackMeta: Record<string, TrackMeta>;
+    artistMeta: Record<string, string>;
     audioFeatureAverages: AudioFeatureAverages;
     topGenres: GenreCount[];
 }
@@ -65,6 +77,14 @@ export interface SignalBreakdown {
     signal5: number;
 }
 
+export interface PresentationMetrics {
+    genreDiversity: number;
+    redFlagArtists: RedFlagArtist[];
+    listeningPersonality: string;
+    roastLines: string[];
+    previousMoodQuadrant: string | null;
+}
+
 export interface ScoreResult {
     score: number;
     verdict: string;
@@ -72,6 +92,14 @@ export interface ScoreResult {
     confidence: number;
     breakdown: SignalBreakdown;
     evidenceBullets: string[];
+    // Presentation metrics (Sprint 8)
+    genreDiversity: number;
+    redFlagArtists: RedFlagArtist[];
+    listeningPersonality: string;
+    roastLines: string[];
+    previousMoodQuadrant: string | null;
+    // Audio feature averages for radar chart
+    audioFeatures: AudioFeatureAverages;
 }
 
 // Typed error classes
