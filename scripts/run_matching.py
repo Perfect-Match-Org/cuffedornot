@@ -441,6 +441,7 @@ def write_to_mongo(
                 {"$set": {
                     "matchedWith": theirs,
                     "matchPlatonic": m.platonic,
+                    "matchCompatibilityScore": 0.99 if m.ghost else m.score,
                     "unmatchable": False,
                 }},
             ))
