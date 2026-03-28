@@ -1,6 +1,10 @@
 import { useSession } from 'next-auth/react';
 import { useEffect, useState, useCallback } from 'react';
 import { isAdmin } from '@/lib/isAdmin';
+import ConfirmDialog from '@/components/admin/ConfirmDialog';
+import PoolOverview from '@/components/admin/PoolOverview';
+import MatchPreview from '@/components/admin/MatchPreview';
+import ForceMatchPanel from '@/components/admin/ForceMatchPanel';
 
 interface Stats {
     totalUsers: number;
@@ -30,6 +34,9 @@ export default function AdminPage() {
     const [loadingStats, setLoadingStats] = useState(true);
     const [togglingField, setTogglingField] = useState<ConfigField | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [pendingToggle, setPendingToggle] = useState<{ field: ConfigField; newValue: boolean } | null>(null);
+    const [forceMatchPrefill, setForceMatchPrefill] = useState<string | undefined>();
+    const [matchRefreshTrigger, setMatchRefreshTrigger] = useState(0);
 
     const fetchStats = useCallback(async () => {
         setLoadingStats(true);
@@ -61,9 +68,15 @@ export default function AdminPage() {
         }
     }, [status, session, fetchStats, fetchConfig]);
 
-    const toggleField = async (field: ConfigField) => {
+    const requestToggle = (field: ConfigField) => {
         if (!config || togglingField) return;
-        const newValue = !config[field];
+        setPendingToggle({ field, newValue: !config[field] });
+    };
+
+    const confirmToggle = async () => {
+        if (!pendingToggle || !config) return;
+        const { field, newValue } = pendingToggle;
+        setPendingToggle(null);
         setTogglingField(field);
         setConfig((prev) => prev ? { ...prev, [field]: newValue } : prev);
         try {
@@ -74,7 +87,6 @@ export default function AdminPage() {
             });
             if (!res.ok) throw new Error();
         } catch {
-            // Revert on failure
             setConfig((prev) => prev ? { ...prev, [field]: !newValue } : prev);
             setError(`Failed to update ${CONFIG_LABELS[field]}`);
         } finally {
@@ -99,7 +111,7 @@ export default function AdminPage() {
     }
 
     return (
-        <div className="max-w-2xl mx-auto px-6 py-10">
+        <div className="max-w-6xl mx-auto px-6 py-10">
             <h1 className="font-dela-gothic text-3xl text-pmblue2-800 mb-8">Admin Dashboard</h1>
 
             {error && (
@@ -120,7 +132,7 @@ export default function AdminPage() {
                 {loadingStats ? (
                     <p className="text-gray-400 font-work-sans text-sm">Loading...</p>
                 ) : stats ? (
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                         {[
                             { label: 'Total Users', value: stats.totalUsers },
                             { label: 'Spotify Collected', value: stats.spotifyCollected },
@@ -140,8 +152,8 @@ export default function AdminPage() {
             </section>
 
             {/* Config toggles */}
-            <section>
-                <h2 className="font-dela-gothic text-lg text-pmblue2-800 mb-4">Config</h2>
+            <section className="mb-10">
+                <h2 className="font-dela-gothic text-lg text-pmblue2-800 mb-4">Event Status</h2>
                 {config ? (
                     <div className="flex flex-col gap-3">
                         {(Object.keys(CONFIG_LABELS) as ConfigField[]).map((field) => (
@@ -149,11 +161,14 @@ export default function AdminPage() {
                                 key={field}
                                 className="flex items-center justify-between border-2 border-pmblue2-500 rounded-lg px-5 py-4 bg-white"
                             >
-                                <span className="font-work-sans text-pmblue2-800 font-medium">
-                                    {CONFIG_LABELS[field]}
-                                </span>
+                                <div className="flex items-center gap-3">
+                                    <span className="font-work-sans text-pmblue2-800 font-medium">
+                                        {CONFIG_LABELS[field]}
+                                    </span>
+                                    <span className={`inline-block w-2.5 h-2.5 rounded-full ${config[field] ? 'bg-green-500' : 'bg-red-400'}`} />
+                                </div>
                                 <button
-                                    onClick={() => toggleField(field)}
+                                    onClick={() => requestToggle(field)}
                                     disabled={togglingField === field}
                                     className={`relative w-12 h-6 rounded-full transition-colors duration-200 focus:outline-none ${
                                         config[field] ? 'bg-pmblue-500' : 'bg-gray-300'
@@ -173,6 +188,36 @@ export default function AdminPage() {
                     <p className="text-gray-400 font-work-sans text-sm">Loading config...</p>
                 )}
             </section>
+
+            {/* Pool Overview */}
+            <PoolOverview />
+
+            {/* Match Preview */}
+            <MatchPreview
+                onForceMatchPrefill={(email) => setForceMatchPrefill(email)}
+                refreshTrigger={matchRefreshTrigger}
+            />
+
+            {/* Force Match */}
+            <ForceMatchPanel
+                prefillEmail={forceMatchPrefill}
+                onMatchCreated={() => setMatchRefreshTrigger((t) => t + 1)}
+            />
+
+            {/* Confirm dialog for config toggles */}
+            <ConfirmDialog
+                open={!!pendingToggle}
+                title="Confirm Config Change"
+                message={
+                    pendingToggle
+                        ? `Are you sure you want to ${pendingToggle.newValue ? 'enable' : 'disable'} "${CONFIG_LABELS[pendingToggle.field]}"?`
+                        : ''
+                }
+                confirmLabel={pendingToggle?.newValue ? 'Enable' : 'Disable'}
+                variant={pendingToggle?.newValue === false ? 'danger' : 'default'}
+                onConfirm={confirmToggle}
+                onCancel={() => setPendingToggle(null)}
+            />
         </div>
     );
 }
