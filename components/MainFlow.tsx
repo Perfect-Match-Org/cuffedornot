@@ -54,7 +54,7 @@ function buildScoreResult(data: Record<string, unknown>): ScoreResult {
 
 export default function MainFlow() {
     const [state, setState] = useState<FlowState>({ phase: 'loading_me' });
-    // useConfig re-fetches on window focus — see docs/ideas-and-optimizations.md
+    // useConfig re-fetches on window focus (no polling interval)
     const config = useConfig();
     const [alreadyOptedIn, setAlreadyOptedIn] = useState(false);
 

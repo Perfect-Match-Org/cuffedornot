@@ -13,7 +13,7 @@ interface MatchData {
 
 export default function MatchPage() {
     const { data: session, status } = useSession();
-    // useConfig re-fetches on window focus — see docs/ideas-and-optimizations.md
+    // useConfig re-fetches on window focus (no polling interval)
     const config = useConfig();
     const [matchData, setMatchData] = useState<MatchData | null>(null);
     const [loadingMatch, setLoadingMatch] = useState(false);
