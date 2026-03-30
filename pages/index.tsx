@@ -140,9 +140,6 @@ export default function Home() {
                 </div>
             </section>
 
-            {/* Sprint 5 opt-in section anchor */}
-            <div id="optin-section" />
-
             {/* ── Footer ── */}
             <footer className="bg-white border-t border-pmblue2-500 px-6 py-6 text-center">
                 <p className="font-work-sans text-xs text-gray-400">
