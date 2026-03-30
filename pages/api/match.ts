@@ -132,8 +132,8 @@ function computeGenreJaccard(
     const myGenres = new Set<string>();
     const partnerGenres = new Set<string>();
     for (const range of TIME_RANGES) {
-        myData?.[range]?.topGenres.forEach((g) => myGenres.add(g.genre));
-        partnerData?.[range]?.topGenres.forEach((g) => partnerGenres.add(g.genre));
+        myData?.[range]?.topGenres?.forEach((g) => myGenres.add(g.genre));
+        partnerData?.[range]?.topGenres?.forEach((g) => partnerGenres.add(g.genre));
     }
     if (myGenres.size === 0 && partnerGenres.size === 0) return 0;
     const intersection = Array.from(myGenres).filter((g) => partnerGenres.has(g)).length;
