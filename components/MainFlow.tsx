@@ -5,6 +5,13 @@ import ReceiptifyInstructions from './ReceiptifyInstructions';
 import ReceiptifyForm from './ReceiptifyForm';
 import VerdictCard from './VerdictCard';
 import LoadingExperience from './LoadingExperience';
+import ProfileForm from './ProfileForm';
+
+interface InitialProfile {
+    genderIdentity: string;
+    attractionPreference: string[];
+    openToPlatonic: boolean;
+}
 
 type FlowState =
     | { phase: 'loading_me' }
@@ -57,6 +64,8 @@ export default function MainFlow() {
     // useConfig re-fetches on window focus (no polling interval)
     const config = useConfig();
     const [alreadyOptedIn, setAlreadyOptedIn] = useState(false);
+    const [firstName, setFirstName] = useState('');
+    const [initialProfile, setInitialProfile] = useState<InitialProfile | undefined>(undefined);
 
     // Sync optInOpen into results phase state whenever the poll fires
     useEffect(() => {
@@ -70,7 +79,13 @@ export default function MainFlow() {
         fetch('/api/me')
             .then((r) => r.json())
             .then((data) => {
+                if (data.error) {
+                    setState({ phase: 'idle' });
+                    return;
+                }
                 setAlreadyOptedIn(data.optIn ?? false);
+                setFirstName(data.firstName ?? '');
+                setInitialProfile(data.profile ?? undefined);
                 if (data.scores?.cuffedOrNotScore != null) {
                     setState({
                         phase: 'results',
@@ -218,12 +233,31 @@ export default function MainFlow() {
 
     // results
     return (
-        <VerdictCard
-            result={state.result}
-            optInOpen={state.optInOpen}
-            alreadyOptedIn={state.alreadyOptedIn}
-            onRedo={() => setState({ phase: 'idle' })}
-            onOptIn={handleOptIn}
-        />
+        <>
+            <VerdictCard
+                result={state.result}
+                optInOpen={state.optInOpen}
+                alreadyOptedIn={state.alreadyOptedIn}
+                onRedo={() => setState({ phase: 'idle' })}
+                onOptIn={handleOptIn}
+            />
+            <div id="optin-section" className="mt-8">
+                {state.optInOpen && !state.alreadyOptedIn && (
+                    <ProfileForm
+                        firstName={firstName}
+                        initialProfile={initialProfile}
+                        optInOpen={state.optInOpen}
+                        onOptedIn={() => {
+                            setAlreadyOptedIn(true);
+                            setState((prev) =>
+                                prev.phase === 'results'
+                                    ? { ...prev, alreadyOptedIn: true }
+                                    : prev
+                            );
+                        }}
+                    />
+                )}
+            </div>
+        </>
     );
 }
