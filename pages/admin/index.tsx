@@ -24,7 +24,7 @@ type ConfigField = keyof Config;
 const CONFIG_LABELS: Record<ConfigField, string> = {
     optInOpen: 'Opt-In Open',
     matchesReleased: 'Matches Released',
-    matchingRun: 'Matching Run',
+    matchingRun: 'Matching Has Run',
 };
 
 export default function AdminPage() {

@@ -48,7 +48,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     // 2. Connect + atomic rate-limit claim
     await connect();
 
-    const cutoff = new Date(Date.now() - 5 * 60 * 1000);
+    const cutoff = new Date(Date.now() - 1 * 60 * 1000);
     const claimed = await CuffedOrNotUser.findOneAndUpdate(
         {
             email: session.user.email,
@@ -59,7 +59,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             ],
         },
         { $set: { 'spotifyData.lastAttemptAt': new Date() } },
-        { new: false }
+        { returnDocument: 'before' }
     );
 
     if (!claimed) {
@@ -67,8 +67,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const user = await CuffedOrNotUser.findOne({ email: session.user.email }).lean() as any;
         const lastAttempt: Date | undefined = user?.spotifyData?.lastAttemptAt;
         const retryAfter = lastAttempt
-            ? Math.ceil((lastAttempt.getTime() + 5 * 60 * 1000 - Date.now()) / 1000)
-            : 300;
+            ? Math.ceil((lastAttempt.getTime() + 1 * 60 * 1000 - Date.now()) / 1000)
+            : 60;
         return res.status(429).json({ error: 'RATE_LIMITED', retryAfter } satisfies CollectError);
     }
 
@@ -260,6 +260,6 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             } satisfies CollectError);
         }
         console.error('Spotify collect error:', err instanceof Error ? err.message : 'unknown');
-        return res.status(500).json({ error: 'Internal server error' });
+        return res.status(500).json({ error: 'INTERNAL_ERROR' });
     }
 }

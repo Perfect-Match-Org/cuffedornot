@@ -162,6 +162,7 @@ export default function MainFlow() {
                 });
                 break;
             }
+            case 'INTERNAL_ERROR':
             default:
                 setState({ phase: 'error', message: 'Something went wrong. Please try again.' });
         }
@@ -242,16 +243,25 @@ export default function MainFlow() {
                 onOptIn={handleOptIn}
             />
             <div id="optin-section" className="mt-8">
-                {state.optInOpen && !state.alreadyOptedIn && (
+                {state.optInOpen && (
                     <ProfileForm
                         firstName={firstName}
                         initialProfile={initialProfile}
                         optInOpen={state.optInOpen}
+                        alreadyOptedIn={state.alreadyOptedIn}
                         onOptedIn={() => {
                             setAlreadyOptedIn(true);
                             setState((prev) =>
                                 prev.phase === 'results'
                                     ? { ...prev, alreadyOptedIn: true }
+                                    : prev
+                            );
+                        }}
+                        onOptedOut={() => {
+                            setAlreadyOptedIn(false);
+                            setState((prev) =>
+                                prev.phase === 'results'
+                                    ? { ...prev, alreadyOptedIn: false }
                                     : prev
                             );
                         }}
