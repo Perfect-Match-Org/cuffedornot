@@ -34,7 +34,9 @@ interface ApiResult {
     redFlagArtists?: RedFlagArtist[];
     roastLines?: string[];
     genreDiversity?: number;
-    audioFeatures?: { minorRatio?: number; valence?: number; tempo?: number };
+    listeningPersonality?: string;
+    verdict?: string;
+    audioFeatures?: { minorRatio?: number; valence?: number; tempo?: number; energy?: number };
     [key: string]: unknown;
 }
 
@@ -46,19 +48,28 @@ function generatePersonalizedMessages(result: ApiResult): string[] {
         msgs.push(`${result.redFlagArtists[0].name} in your top artists? Say less.`);
     }
 
-    // Audio feature tease
+    // Audio feature tease — broader thresholds so something always fires
     const af = result.audioFeatures;
     if (af) {
-        if (af.minorRatio !== undefined && af.minorRatio > 0.6) {
+        if (af.minorRatio !== undefined && af.minorRatio > 0.5) {
             msgs.push(`${Math.round(af.minorRatio * 100)}% minor key... that's a lot of feelings.`);
-        } else if (af.valence !== undefined && af.valence < 0.3) {
+        } else if (af.valence !== undefined && af.valence < 0.4) {
             msgs.push(`Average valence of ${af.valence.toFixed(2)}... the algorithm is concerned.`);
-        } else if (af.tempo !== undefined && af.tempo < 90) {
-            msgs.push(`BPM averaging ${Math.round(af.tempo)}... basically a lullaby.`);
+        } else if (af.energy !== undefined && af.energy > 0.75) {
+            msgs.push(`High energy listener detected. The chaos is noted.`);
+        } else if (af.tempo !== undefined && af.tempo < 100) {
+            msgs.push(`BPM averaging ${Math.round(af.tempo)}... slow and brooding.`);
+        } else {
+            msgs.push(`Your audio profile is... interesting. Very interesting.`);
         }
     }
 
-    // Verdict tease
+    // Listening personality tease
+    if (result.listeningPersonality) {
+        msgs.push(`The algorithm has labeled you: ${result.listeningPersonality}`);
+    }
+
+    // Verdict tease (always shown last)
     msgs.push('Oh. OH. This is going to be good...');
 
     return msgs.slice(0, 3);
@@ -78,6 +89,7 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
     const [message, setMessage] = useState(PHASE1_MESSAGES[0]);
     const [progress, setProgress] = useState(0);
     const [fadeKey, setFadeKey] = useState(0);
+    const progressRef = useRef(0);
     const apiResultRef = useRef<ApiResult | null>(null);
     const apiErrorRef = useRef<{ error: string; retryAfter?: number } | null>(null);
     const hasCompletedRef = useRef(false);
@@ -87,10 +99,12 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
     onErrorRef.current = onError;
 
     useEffect(() => {
-        // Listen for API result
+        // Listen for API result.
+        // Use res.clone().json() so that React StrictMode's double-invoked effect doesn't
+        // fail on the second handler trying to read an already-consumed body stream.
         apiPromise
             .then(async (res) => {
-                const data = await res.json();
+                const data = await res.clone().json();
                 if (data.error) {
                     apiErrorRef.current = data;
                 } else {
@@ -129,18 +143,25 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
                 phase = 3;
                 personalizedMsgs = generatePersonalizedMessages(apiResultRef.current);
                 p3MsgIndex = 0;
+                // Show first personalized message immediately (don't wait 1200ms)
+                const msgs = personalizedMsgs.length > 0 ? personalizedMsgs : INSUFFICIENT_PHASE3;
+                if (msgs.length > 0) {
+                    setMessage(msgs[0]);
+                    setFadeKey((k) => k + 1);
+                    p3MsgIndex = 1;
+                }
                 lastMsgTime = elapsed;
             } else if (phase === 2 && elapsed >= 6000 && !apiResultRef.current) {
                 // API hasn't responded yet — stay in phase 2 with extra messages
             }
 
             // Reveal
-            if (phase === 3 && elapsed >= 8500 && apiResultRef.current && !hasCompletedRef.current) {
+            if (phase === 3 && elapsed >= 9000 && apiResultRef.current && !hasCompletedRef.current) {
                 hasCompletedRef.current = true;
                 clearInterval(interval);
+                progressRef.current = 100;
                 setProgress(100);
-                // Small delay for the 100% snap animation
-                setTimeout(() => onCompleteRef.current(apiResultRef.current!), 400);
+                setTimeout(() => onCompleteRef.current(apiResultRef.current!), 300);
                 return;
             }
 
@@ -150,13 +171,17 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
                 return;
             }
 
-            // Progress bar
-            if (phase === 1) {
-                setProgress(Math.min(30, (elapsed / 3000) * 30));
-            } else if (phase === 2) {
-                setProgress(Math.min(65, 30 + ((elapsed - 3000) / 3000) * 35));
-            } else if (phase === 3) {
-                setProgress(Math.min(90, 65 + ((elapsed - 6000) / 2500) * 25));
+            // Stochastic progress bar — realistic surging + stalling behaviour
+            // Cap per phase: phase 1 → 28, phase 2 → 62 (or 70 when API is back), phase 3 → 88
+            const phaseMax = phase === 1 ? 28 : phase === 2 ? (apiResultRef.current ? 70 : 62) : 88;
+            if (progressRef.current < phaseMax) {
+                // ~40% of ticks stall; remainder advance by a random fraction of remaining gap
+                if (Math.random() > 0.4) {
+                    const gap = phaseMax - progressRef.current;
+                    const increment = Math.random() * gap * 0.2 + 0.3;
+                    progressRef.current = Math.min(phaseMax, progressRef.current + increment);
+                    setProgress(progressRef.current);
+                }
             }
 
             // Message rotation
@@ -170,7 +195,7 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
                 setMessage(PHASE2_MESSAGES[msgIndex]);
                 setFadeKey((k) => k + 1);
                 lastMsgTime = elapsed;
-            } else if (phase === 3 && elapsed - lastMsgTime >= 1200) {
+            } else if (phase === 3 && elapsed - lastMsgTime >= 1500) {
                 const msgs = personalizedMsgs.length > 0 ? personalizedMsgs : INSUFFICIENT_PHASE3;
                 if (p3MsgIndex < msgs.length) {
                     setMessage(msgs[p3MsgIndex]);
@@ -185,11 +210,11 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
     }, [apiPromise]);
 
     return (
-        <div className="flex flex-col items-center justify-center py-12 gap-6 w-full max-w-md mx-auto">
+        <div className="flex flex-col items-center justify-center py-12 gap-6 w-full max-w-md mx-auto px-4">
             {/* Progress bar */}
-            <div className="w-full h-3 rounded-full bg-gray-100 overflow-hidden">
+            <div className="w-full h-4 rounded-full bg-gray-200 overflow-hidden shadow-inner p-0.5">
                 <div
-                    className={`h-full rounded-full bg-gradient-to-r from-pmblue-500 via-pmpink2-500 to-pmred-500 transition-all duration-800 ease-in-out ${
+                    className={`h-full rounded-full bg-gradient-to-r from-pmblue-500 via-pmpink2-500 to-pmred-500 bg-[length:200%_auto] animate-gradient-x transition-all duration-500 ease-out shadow-sm ${
                         progress >= 85 ? 'animate-pulse' : ''
                     }`}
                     style={{ width: `${progress}%` }}

@@ -53,6 +53,16 @@ module.exports = {
                     '0%': { transform: 'translateX(0)' },
                     '100%': { transform: 'translateX(-50%)' },
                 },
+                'gradient-x': {
+                    '0%, 100%': {
+                        'background-size': '200% 200%',
+                        'background-position': 'left center',
+                    },
+                    '50%': {
+                        'background-size': '200% 200%',
+                        'background-position': 'right center',
+                    },
+                },
             },
             animation: {
                 jiggle: 'jiggle 0.3s ease-in-out infinite',
@@ -63,6 +73,7 @@ module.exports = {
                 'vertical-marquee': 'vertical-marquee var(--marquee-duration) linear infinite',
                 starburst: 'starburst 0.8s ease-out forwards',
                 marquee: 'marquee var(--marquee-duration, 45s) linear infinite',
+                'gradient-x': 'gradient-x 3s ease infinite',
             },
         },
     },
