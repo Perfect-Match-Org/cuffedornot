@@ -162,6 +162,7 @@ export default function MainFlow() {
                 });
                 break;
             }
+            case 'INTERNAL_ERROR':
             default:
                 setState({ phase: 'error', message: 'Something went wrong. Please try again.' });
         }
