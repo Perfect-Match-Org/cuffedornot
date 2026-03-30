@@ -92,11 +92,15 @@ export default function ProfileForm({
 
     async function handleOptOut() {
         try {
-            await fetch('/api/optout', { method: 'POST' });
+            const res = await fetch('/api/optout', { method: 'POST' });
+            if (!res.ok) {
+                setError('Failed to opt out. Please try again.');
+                return;
+            }
+            setFormState('opted_out');
         } catch {
-            // ignore
+            setError('Something went wrong. Please try again.');
         }
-        setFormState('opted_out');
     }
 
     if (formState === 'opted_out') {

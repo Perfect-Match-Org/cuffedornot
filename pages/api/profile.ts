@@ -25,7 +25,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     if (typeof genderIdentity !== 'string' || genderIdentity.trim() === '') {
         return res.status(400).json({ error: 'INVALID_INPUT', field: 'genderIdentity' });
     }
-    if (!Array.isArray(attractionPreference) || attractionPreference.length === 0) {
+    if (!Array.isArray(attractionPreference) || attractionPreference.length === 0 || !attractionPreference.every((opt) => typeof opt === 'string')) {
         return res.status(400).json({ error: 'INVALID_INPUT', field: 'attractionPreference' });
     }
 
