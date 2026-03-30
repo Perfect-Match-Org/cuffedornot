@@ -273,14 +273,12 @@ export default function VerdictCard({
 
             {/* Actions */}
             <div className="flex flex-col items-center gap-3 pt-2">
-                {optInOpen && (
-                    <button
-                        onClick={onRedo}
-                        className="min-h-[44px] rounded-full border-2 border-pmblue-500 px-6 py-2 font-work-sans text-sm text-pmblue-500 hover:bg-pmblue2-500 transition-colors cursor-pointer"
-                    >
-                        Try a different URL
-                    </button>
-                )}
+                <button
+                    onClick={onRedo}
+                    className="min-h-[44px] rounded-full border-2 border-pmblue-500 px-6 py-2 font-work-sans text-sm text-pmblue-500 hover:bg-pmblue2-500 transition-colors cursor-pointer"
+                >
+                    Try a different URL
+                </button>
 
                 {optInOpen && !alreadyOptedIn && (
                     <button

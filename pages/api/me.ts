@@ -4,6 +4,8 @@ import { authOptions } from './auth/[...nextauth]';
 import { connect, CuffedOrNotUser, getConfig } from '@/database';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    res.setHeader('Cache-Control', 'no-store');
+
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -26,6 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         firstName: user.firstName ?? null,
         profileComplete: user.profileComplete,
         optIn: user.optIn,
+        profile: user.profile ?? null,
         scores: user.scores ?? null,
         hasSpotifyData: !!user.spotifyData?.collectedAt,
         config: {
