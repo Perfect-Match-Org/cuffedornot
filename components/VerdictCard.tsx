@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { toPng } from 'html-to-image';
 import { ScoreResult } from '@/types/spotify';
 import {
     Radar,
@@ -79,6 +80,47 @@ export default function VerdictCard({
     useEffect(() => { setCurrentYear(new Date().getFullYear()); }, []);
 
     const isInsufficient = result.verdict === INSUFFICIENT;
+
+    const shareCardRef = useRef<HTMLDivElement>(null);
+    const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+
+    const handleShare = useCallback(async () => {
+        try {
+            // iOS Safari: text-only share (html-to-image fails with custom fonts on iOS)
+            if (isIOS && navigator.share) {
+                await navigator.share({
+                    text: `${result.verdict} \u2014 ${result.score}/100 on Cuffed or Not!\ncuffedornot.perfectmatch.ai`,
+                });
+                return;
+            }
+
+            if (!shareCardRef.current) return;
+
+            await document.fonts.ready;
+            const dataUrl = await toPng(shareCardRef.current, { pixelRatio: 2 });
+
+            // Mobile with Web Share API: share as PNG file
+            if (navigator.share && navigator.canShare) {
+                const blob = await (await fetch(dataUrl)).blob();
+                const file = new File([blob], 'cuffed-or-not.png', { type: 'image/png' });
+                if (navigator.canShare({ files: [file] })) {
+                    await navigator.share({ files: [file] });
+                    return;
+                }
+            }
+
+            // Desktop fallback: download as PNG
+            const link = document.createElement('a');
+            link.download = 'cuffed-or-not.png';
+            link.href = dataUrl;
+            link.click();
+        } catch (err) {
+            // User cancelled share or toPng failed — ignore
+            if (err instanceof Error && err.name !== 'AbortError') {
+                console.warn('Share failed:', err);
+            }
+        }
+    }, [result.verdict, result.score, isIOS]);
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-6">
@@ -269,6 +311,48 @@ export default function VerdictCard({
                 </>
             )}
 
+            {/* Hidden share card for image generation */}
+            {!isInsufficient && (
+                <div
+                    ref={shareCardRef}
+                    aria-hidden
+                    style={{ position: 'absolute', left: '-9999px', top: 0 }}
+                    className="w-[400px] bg-white rounded-2xl border-2 border-pmpink2-500 p-8 space-y-4"
+                >
+                    <p className="font-dela-gothic text-4xl text-pmred-500 text-center">
+                        {result.verdict}
+                    </p>
+                    <div>
+                        <div className="flex justify-between font-work-sans text-xs text-gray-500 mb-1">
+                            <span>Cuffed</span>
+                            <span>Single</span>
+                        </div>
+                        <div className="h-4 rounded-full bg-pmpink2-500 overflow-hidden">
+                            <div
+                                className="h-full rounded-full bg-pmred-500"
+                                style={{ width: `${Math.max(2, result.score)}%` }}
+                            />
+                        </div>
+                        <p className="font-work-sans text-sm text-gray-500 text-right mt-1">
+                            {result.score}/100
+                        </p>
+                    </div>
+                    {result.roastLines?.[0] && (
+                        <p className="font-work-sans text-sm text-gray-700 text-center italic">
+                            &ldquo;{result.roastLines[0]}&rdquo;
+                        </p>
+                    )}
+                    {result.listeningPersonality && (
+                        <p className="font-dela-gothic text-base text-pmblue2-800 text-center">
+                            {result.listeningPersonality}
+                        </p>
+                    )}
+                    <p className="font-work-sans text-xs text-gray-400 text-center pt-2">
+                        cuffedornot.perfectmatch.ai
+                    </p>
+                </div>
+            )}
+
             {/* Actions */}
             <div className="flex flex-col items-center gap-3 pt-2">
                 <button
@@ -277,6 +361,15 @@ export default function VerdictCard({
                 >
                     Try a different URL
                 </button>
+
+                {!isInsufficient && (
+                    <button
+                        onClick={handleShare}
+                        className="min-h-[44px] rounded-full border-2 border-pmred-500 px-6 py-2 font-work-sans text-sm text-pmred-500 hover:bg-pmred-500 hover:text-white transition-colors cursor-pointer"
+                    >
+                        Share your result
+                    </button>
+                )}
 
                 {optInOpen && !alreadyOptedIn && (
                     <button

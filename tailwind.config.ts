@@ -84,7 +84,7 @@ module.exports = {
                 '.transform-3d': { 'transform-style': 'preserve-3d' },
                 '.rotate-y-0': { transform: 'rotateY(0turn)' },
                 '.rotate-y-half': { transform: 'rotateY(0.5turn) translateZ(1px)' },
-                '.backface-hidden': { 'backface-visibility': 'hidden' },
+                '.backface-hidden': { 'backface-visibility': 'hidden', '-webkit-backface-visibility': 'hidden' },
                 '.bg-linear-to-b': { 'background-image': 'linear-gradient(to bottom, var(--tw-gradient-stops))' },
                 '.bg-linear-to-t': { 'background-image': 'linear-gradient(to top, var(--tw-gradient-stops))' },
             };

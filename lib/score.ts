@@ -542,5 +542,9 @@ export function generateRoastLines(
         }
     }
 
+    if (lines.length === 0) {
+        lines.push("Your music taste is so unremarkable that the algorithm couldn't even roast you. Somehow that's worse.");
+    }
+
     return lines.slice(0, 4);
 }
