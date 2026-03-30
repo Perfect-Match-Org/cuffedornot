@@ -161,7 +161,7 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
                 clearInterval(interval);
                 progressRef.current = 100;
                 setProgress(100);
-                setTimeout(() => onCompleteRef.current(apiResultRef.current!), 300);
+                setTimeout(() => onCompleteRef.current(apiResultRef.current!), 500);
                 return;
             }
 

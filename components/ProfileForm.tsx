@@ -42,7 +42,7 @@ export default function ProfileForm({
     onOptedIn,
     onOptedOut,
 }: ProfileFormProps) {
-    const [formState, setFormState] = useState<FormState>(alreadyOptedIn ? 'idle' : 'idle');
+    const [formState, setFormState] = useState<FormState>('idle');
     const [genderIdentity, setGenderIdentity] = useState(initialProfile?.genderIdentity ?? '');
     const [attractionPreference, setAttractionPreference] = useState<string[]>(
         initialProfile?.attractionPreference ?? []
@@ -157,12 +157,20 @@ export default function ProfileForm({
                 <p className="font-work-sans text-gray-600 text-sm mb-5">
                     Your matching preferences have been saved.
                 </p>
-                <button
-                    onClick={handleOptOut}
-                    className="font-work-sans text-xs text-gray-400 underline hover:text-gray-600 transition-colors cursor-pointer"
-                >
-                    Not feeling it? Opt out.
-                </button>
+                <div className="flex justify-center gap-4">
+                    <button
+                        onClick={() => setFormState('idle')}
+                        className="font-work-sans text-xs text-pmblue-500 underline hover:text-pmblue2-800 transition-colors cursor-pointer"
+                    >
+                        Back to profile
+                    </button>
+                    <button
+                        onClick={handleOptOut}
+                        className="font-work-sans text-xs text-gray-400 underline hover:text-gray-600 transition-colors cursor-pointer"
+                    >
+                        Not feeling it? Opt out.
+                    </button>
+                </div>
             </div>
         );
     }
