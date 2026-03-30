@@ -38,6 +38,7 @@ export const authOptions: NextAuthOptions = {
                                     { email: profile.email },
                                     { projection: { 'profile.firstName': 1 } }
                                 );
+                            // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             firstName = (mainUser as any)?.profile?.firstName;
                         } catch {
                             // ignore — fallback below

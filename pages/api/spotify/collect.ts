@@ -13,6 +13,10 @@ import {
     computeESValue,
     computeRentfrowVector,
     computeMoodQuadrant,
+    computeGenreDiversity,
+    detectRedFlagArtists,
+    computeListeningPersonality,
+    generateRoastLines,
 } from '@/lib/score';
 import { generateEvidenceBullets } from '@/lib/evidenceBullets';
 import {
@@ -59,6 +63,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     );
 
     if (!claimed) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const user = await CuffedOrNotUser.findOne({ email: session.user.email }).lean() as any;
         const lastAttempt: Date | undefined = user?.spotifyData?.lastAttemptAt;
         const retryAfter = lastAttempt
@@ -127,6 +132,16 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const trackIds = tracks.map((t) => t.id);
             const artistIds = artists.map((a) => a.id);
 
+            // Build metadata maps for match reveal display
+            const trackMeta: Record<string, { name: string; artist: string }> = {};
+            for (const t of tracks) {
+                trackMeta[t.id] = { name: t.name, artist: t.artists[0]?.name ?? 'Unknown' };
+            }
+            const artistMeta: Record<string, string> = {};
+            for (const a of artists) {
+                artistMeta[a.id] = a.name;
+            }
+
             const rangeFeatures = trackIds
                 .map((id) => featureMap.get(id) ?? null)
                 .filter((f): f is AudioFeature => f !== null);
@@ -138,6 +153,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             return {
                 trackIds,
                 artistIds,
+                trackMeta,
+                artistMeta,
                 audioFeatureAverages: avgs,
                 topGenres: extractTopGenres(artists),
             };
@@ -175,7 +192,26 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         const moodQuadrant = computeMoodQuadrant(shortRange.audioFeatureAverages);
         const evidenceBullets = generateEvidenceBullets(scoreResult.breakdown, spotifyDataForScoring);
 
-        // 10. Persist scores
+        // 10a. Compute presentation metrics (Sprint 8)
+        const genreDiversity = computeGenreDiversity(shortRange.topGenres);
+        const redFlagArtists = detectRedFlagArtists([
+            shortRange.artistMeta,
+            mediumRange?.artistMeta,
+            longRange?.artistMeta,
+        ]);
+        const listeningPersonality = computeListeningPersonality(shortRange.audioFeatureAverages);
+        const previousMoodQuadrant = mediumRange
+            ? computeMoodQuadrant(mediumRange.audioFeatureAverages)
+            : null;
+        const roastLines = generateRoastLines(
+            shortRange.audioFeatureAverages,
+            shortRange.topGenres,
+            redFlagArtists,
+            mediumRange?.audioFeatureAverages,
+            shortRange.audioFeatureAverages.avgTrackAgeYears
+        );
+
+        // 10b. Persist scores (including presentation metrics)
         await CuffedOrNotUser.findOneAndUpdate(
             { email: session.user.email },
             {
@@ -188,6 +224,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
                         esValue,
                         rentfrowVector: Array.from(rentfrowVector),
                         moodQuadrant,
+                        genreDiversity,
+                        redFlagArtists,
+                        listeningPersonality,
+                        roastLines,
+                        previousMoodQuadrant,
                     },
                 },
             }
@@ -201,6 +242,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             confidence: scoreResult.confidence,
             breakdown: scoreResult.breakdown,
             evidenceBullets,
+            genreDiversity,
+            redFlagArtists,
+            listeningPersonality,
+            roastLines,
+            previousMoodQuadrant,
+            audioFeatures: shortRange.audioFeatureAverages,
         });
     } catch (err) {
         if (err instanceof SpotifyAuthError) {

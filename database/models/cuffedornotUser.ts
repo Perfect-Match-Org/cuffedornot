@@ -1,9 +1,11 @@
 import mongoose, { Schema, Document, Model } from 'mongoose';
-import { AudioFeatureAverages, GenreCount } from '@/types/spotify';
+import { AudioFeatureAverages, GenreCount, TrackMeta, RedFlagArtist } from '@/types/spotify';
 
 export interface ISpotifyTimeRange {
     trackIds: string[];
     artistIds: string[];
+    trackMeta: Record<string, TrackMeta>;
+    artistMeta: Record<string, string>;
     audioFeatureAverages: AudioFeatureAverages;
     topGenres: GenreCount[];
 }
@@ -24,6 +26,12 @@ export interface IScores {
     esValue?: number;
     rentfrowVector?: number[];
     moodQuadrant?: string;
+    // Presentation metrics (Sprint 8)
+    genreDiversity?: number;
+    redFlagArtists?: RedFlagArtist[];
+    listeningPersonality?: string;
+    roastLines?: string[];
+    previousMoodQuadrant?: string | null;
 }
 
 export interface IProfile {
@@ -42,6 +50,7 @@ export interface ICuffedOrNotUser extends Document {
     optIn: boolean;
     matchedWith?: string | null;
     matchPlatonic?: boolean;
+    matchCompatibilityScore?: number | null;
     unmatchable?: boolean;
 }
 
@@ -69,10 +78,14 @@ const genreCountSchema = new Schema<GenreCount>(
     { _id: false }
 );
 
+const trackMetaValueSchema = new Schema({ name: String, artist: String }, { _id: false });
+
 const spotifyTimeRangeSchema = new Schema<ISpotifyTimeRange>(
     {
         trackIds: [String],
         artistIds: [String],
+        trackMeta: { type: Map, of: trackMetaValueSchema, default: {} },
+        artistMeta: { type: Map, of: String, default: {} },
         audioFeatureAverages: audioFeatureAveragesSchema,
         topGenres: [genreCountSchema],
     },
@@ -90,6 +103,8 @@ const spotifyDataSchema = new Schema<ISpotifyData>(
     { _id: false }
 );
 
+const redFlagArtistSchema = new Schema({ name: String, roast: String }, { _id: false });
+
 const scoresSchema = new Schema<IScores>(
     {
         cuffedOrNotScore: Number,
@@ -99,6 +114,11 @@ const scoresSchema = new Schema<IScores>(
         esValue: Number,
         rentfrowVector: [Number],
         moodQuadrant: String,
+        genreDiversity: Number,
+        redFlagArtists: [redFlagArtistSchema],
+        listeningPersonality: String,
+        roastLines: [String],
+        previousMoodQuadrant: String,
     },
     { _id: false }
 );
@@ -122,6 +142,7 @@ const cuffedOrNotUserSchema = new Schema<ICuffedOrNotUser>({
     optIn: { type: Boolean, default: false },
     matchedWith: { type: String, default: null },
     matchPlatonic: Boolean,
+    matchCompatibilityScore: { type: Number, default: null },
     unmatchable: Boolean,
 });
 

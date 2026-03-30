@@ -1,16 +1,24 @@
 import { useEffect, useState } from 'react';
-import { ScoreResult } from '@/types/spotify';
+import { AudioFeatureAverages, RedFlagArtist, ScoreResult } from '@/types/spotify';
+import { useConfig } from '@/hooks/useConfig';
 import ReceiptifyInstructions from './ReceiptifyInstructions';
 import ReceiptifyForm from './ReceiptifyForm';
 import VerdictCard from './VerdictCard';
+import LoadingExperience from './LoadingExperience';
 
 type FlowState =
     | { phase: 'loading_me' }
     | { phase: 'idle' }
-    | { phase: 'submitting' }
+    | { phase: 'submitting'; apiPromise: Promise<Response> }
     | { phase: 'results'; result: ScoreResult; optInOpen: boolean; alreadyOptedIn: boolean }
     | { phase: 'rate_limited'; retryAfter: number }
     | { phase: 'error'; message: string };
+
+const EMPTY_AUDIO: AudioFeatureAverages = {
+    danceability: 0, energy: 0, valence: 0, tempo: 0, acousticness: 0,
+    instrumentalness: 0, liveness: 0, speechiness: 0, loudness: 0,
+    mode: 0, minorRatio: 0, avgTrackAgeYears: 0, avgPopularity: 0,
+};
 
 const INSUFFICIENT_RESULT: ScoreResult = {
     score: 0,
@@ -19,35 +27,58 @@ const INSUFFICIENT_RESULT: ScoreResult = {
     confidence: 0,
     breakdown: { signal1: 0, signal2: null, signal3: null, signal4: null, signal5: 0 },
     evidenceBullets: [],
+    genreDiversity: 0,
+    redFlagArtists: [],
+    listeningPersonality: '',
+    roastLines: [],
+    previousMoodQuadrant: null,
+    audioFeatures: EMPTY_AUDIO,
 };
+
+function buildScoreResult(data: Record<string, unknown>): ScoreResult {
+    return {
+        score: (data.score ?? data.cuffedOrNotScore ?? 0) as number,
+        verdict: (data.verdict ?? '???') as string,
+        tagline: (data.tagline ?? '') as string,
+        confidence: (data.confidence ?? 0) as number,
+        breakdown: (data.breakdown ?? { signal1: 0, signal2: null, signal3: null, signal4: null, signal5: 0 }) as ScoreResult['breakdown'],
+        evidenceBullets: (data.evidenceBullets ?? []) as string[],
+        genreDiversity: (data.genreDiversity ?? 0) as number,
+        redFlagArtists: (data.redFlagArtists ?? []) as RedFlagArtist[],
+        listeningPersonality: (data.listeningPersonality ?? '') as string,
+        roastLines: (data.roastLines ?? []) as string[],
+        previousMoodQuadrant: (data.previousMoodQuadrant ?? null) as string | null,
+        audioFeatures: (data.audioFeatures ?? EMPTY_AUDIO) as AudioFeatureAverages,
+    };
+}
 
 export default function MainFlow() {
     const [state, setState] = useState<FlowState>({ phase: 'loading_me' });
-    const [optInOpen, setOptInOpen] = useState(true);
+    // useConfig re-fetches on window focus (no polling interval)
+    const config = useConfig();
     const [alreadyOptedIn, setAlreadyOptedIn] = useState(false);
+
+    // Sync optInOpen into results phase state whenever the poll fires
+    useEffect(() => {
+        if (config === null) return;
+        setState((prev) =>
+            prev.phase === 'results' ? { ...prev, optInOpen: config.optInOpen } : prev
+        );
+    }, [config?.optInOpen]);
 
     useEffect(() => {
         fetch('/api/me')
             .then((r) => r.json())
             .then((data) => {
-                setOptInOpen(data.config?.optInOpen ?? true);
                 setAlreadyOptedIn(data.optIn ?? false);
                 if (data.scores?.cuffedOrNotScore != null) {
                     setState({
                         phase: 'results',
-                        result: {
-                            score: data.scores.cuffedOrNotScore,
-                            verdict: data.scores.verdict ?? '???',
-                            tagline: data.scores.tagline ?? '',
-                            confidence: data.scores.confidence ?? 0,
-                            breakdown: data.scores.breakdown ?? {
-                                signal1: 0, signal2: null, signal3: null, signal4: null, signal5: 0,
-                            },
-                            evidenceBullets: data.scores.evidenceBullets ?? [],
-                        },
+                        result: buildScoreResult(data.scores),
                         optInOpen: data.config?.optInOpen ?? true,
                         alreadyOptedIn: data.optIn ?? false,
                     });
+                    // Note: subsequent polls via useConfig will keep optInOpen up-to-date
                 } else {
                     setState({ phase: 'idle' });
                 }
@@ -71,69 +102,57 @@ export default function MainFlow() {
         return () => clearInterval(intervalId);
     }, [state.phase]);
 
-    const handleSubmit = async (accessToken: string) => {
-        setState({ phase: 'submitting' });
-        try {
-            const res = await fetch('/api/spotify/collect', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ accessToken }),
-            });
-            const data = await res.json();
+    const handleSubmit = (accessToken: string) => {
+        const promise = fetch('/api/spotify/collect', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ accessToken }),
+        });
+        setState({ phase: 'submitting', apiPromise: promise });
+    };
 
-            if (data.error) {
-                switch (data.error) {
-                    case 'SPOTIFY_TOKEN_EXPIRED':
-                        setState({
-                            phase: 'error',
-                            message: 'Your Receiptify link expired — go back to Receiptify and copy the URL again.',
-                        });
-                        break;
-                    case 'SPOTIFY_RATE_LIMITED':
-                        setState({ phase: 'rate_limited', retryAfter: data.retryAfter ?? 60 });
-                        break;
-                    case 'SPOTIFY_INSUFFICIENT_DATA':
-                        setState({
-                            phase: 'results',
-                            result: INSUFFICIENT_RESULT,
-                            optInOpen,
-                            alreadyOptedIn,
-                        });
-                        break;
-                    case 'RATE_LIMITED': {
-                        const mins = Math.ceil((data.retryAfter ?? 300) / 60);
-                        setState({
-                            phase: 'error',
-                            message: `Please wait ${mins} minute${mins !== 1 ? 's' : ''} before resubmitting.`,
-                        });
-                        break;
-                    }
-                    default:
-                        setState({ phase: 'error', message: 'Something went wrong. Please try again.' });
-                }
-                return;
+    const handleLoadingComplete = (data: Record<string, unknown>) => {
+        setState({
+            phase: 'results',
+            result: buildScoreResult(data),
+            optInOpen: config?.optInOpen ?? true,
+            alreadyOptedIn,
+        });
+    };
+
+    const handleLoadingError = (data: { error: string; retryAfter?: number }) => {
+        switch (data.error) {
+            case 'SPOTIFY_TOKEN_EXPIRED':
+                setState({
+                    phase: 'error',
+                    message: 'Your Receiptify link expired — go back to Receiptify and copy the URL again.',
+                });
+                break;
+            case 'SPOTIFY_RATE_LIMITED':
+                setState({ phase: 'rate_limited', retryAfter: data.retryAfter ?? 60 });
+                break;
+            case 'SPOTIFY_INSUFFICIENT_DATA':
+                setState({
+                    phase: 'results',
+                    result: INSUFFICIENT_RESULT,
+                    optInOpen: config?.optInOpen ?? true,
+                    alreadyOptedIn,
+                });
+                break;
+            case 'RATE_LIMITED': {
+                const mins = Math.ceil((data.retryAfter ?? 300) / 60);
+                setState({
+                    phase: 'error',
+                    message: `Please wait ${mins} minute${mins !== 1 ? 's' : ''} before resubmitting.`,
+                });
+                break;
             }
-
-            setState({
-                phase: 'results',
-                result: {
-                    score: data.score,
-                    verdict: data.verdict,
-                    tagline: data.tagline,
-                    confidence: data.confidence,
-                    breakdown: data.breakdown,
-                    evidenceBullets: data.evidenceBullets ?? [],
-                },
-                optInOpen,
-                alreadyOptedIn,
-            });
-        } catch {
-            setState({ phase: 'error', message: 'Network error — please check your connection and try again.' });
+            default:
+                setState({ phase: 'error', message: 'Something went wrong. Please try again.' });
         }
     };
 
     const handleOptIn = () => {
-        // Sprint 5 will implement full opt-in form; placeholder scroll/stub
         const el = document.getElementById('optin-section');
         if (el) el.scrollIntoView({ behavior: 'smooth' });
     };
@@ -162,10 +181,11 @@ export default function MainFlow() {
 
     if (state.phase === 'submitting') {
         return (
-            <div className="flex flex-col items-center justify-center py-12 gap-4">
-                <div className="w-10 h-10 rounded-full border-4 border-pmblue2-500 border-t-pmblue-500 animate-spin" />
-                <p className="font-work-sans text-gray-600 text-lg">Analyzing your Spotify…</p>
-            </div>
+            <LoadingExperience
+                apiPromise={state.apiPromise}
+                onComplete={handleLoadingComplete}
+                onError={handleLoadingError}
+            />
         );
     }
 

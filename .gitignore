@@ -52,3 +52,7 @@ __pycache__/
 # keys
 *.pem
 *.key
+
+docs/
+*.md
+!README.md

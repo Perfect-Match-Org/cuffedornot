@@ -1,5 +1,13 @@
-import { AudioFeatureAverages, GenreCount, SignalBreakdown } from '@/types/spotify';
+import { AudioFeatureAverages, GenreCount, RedFlagArtist, SignalBreakdown } from '@/types/spotify';
 import { lookupGenreSadness } from './genreMatch';
+import redFlagArtistsData from './red-flag-artists.json';
+import {
+    AUDIO_FEATURE_ROASTS,
+    GENRE_ROASTS,
+    DRIFT_ROASTS,
+    MUSIC_AGE_ROASTS,
+    LISTENING_PERSONALITY_MAP,
+} from './roast-templates';
 
 // ---------------------------------------------------------------------------
 // Utilities
@@ -360,4 +368,179 @@ export function computeFinalScore(spotifyData: SpotifyDataForScoring): {
     const { verdict, tagline } = getVerdict(score);
 
     return { score, confidence, verdict, tagline, breakdown };
+}
+
+// ---------------------------------------------------------------------------
+// Presentation Metrics (Sprint 8)
+// ---------------------------------------------------------------------------
+
+/**
+ * Shannon entropy of genre distribution. Higher = more diverse.
+ */
+export function computeGenreDiversity(topGenres: GenreCount[]): number {
+    if (topGenres.length <= 1) return 0;
+    const total = topGenres.reduce((s, g) => s + g.count, 0);
+    if (total === 0) return 0;
+    let entropy = 0;
+    for (const g of topGenres) {
+        const p = g.count / total;
+        if (p > 0) entropy -= p * Math.log(p);
+    }
+    return nanGuard(entropy, 0);
+}
+
+/**
+ * Scan all artist names across time ranges against the red flag list.
+ */
+export function detectRedFlagArtists(
+    artistMetas: (Record<string, string> | undefined)[]
+): RedFlagArtist[] {
+    const lookup = redFlagArtistsData as Record<string, string>;
+    const seen = new Set<string>();
+    const results: RedFlagArtist[] = [];
+
+    for (const meta of artistMetas) {
+        if (!meta) continue;
+        for (const name of Object.values(meta)) {
+            const key = name.toLowerCase();
+            if (key in lookup && !seen.has(key)) {
+                seen.add(key);
+                results.push({ name, roast: lookup[key] });
+            }
+        }
+    }
+    return results;
+}
+
+/**
+ * 2-3 word personality label from top-2 extreme audio features.
+ */
+export function computeListeningPersonality(short: AudioFeatureAverages): string {
+    const features: { name: string; value: number }[] = [
+        { name: 'valence', value: short.valence },
+        { name: 'energy', value: short.energy },
+        { name: 'danceability', value: short.danceability },
+        { name: 'acousticness', value: short.acousticness },
+        { name: 'instrumentalness', value: short.instrumentalness },
+    ];
+
+    // Sort by deviation from 0.5 (descending)
+    features.sort((a, b) => Math.abs(b.value - 0.5) - Math.abs(a.value - 0.5));
+
+    const top1 = features[0];
+    const top2 = features[1];
+
+    const dir = (f: { name: string; value: number }) =>
+        f.value >= 0.5 ? `high_${f.name}` : `low_${f.name}`;
+
+    const key = `${dir(top1)}+${dir(top2)}`;
+    return LISTENING_PERSONALITY_MAP[key] ?? 'The Well-Adjusted Listener';
+}
+
+/**
+ * Pick 3-4 roast lines from template banks, filled with real data.
+ */
+export function generateRoastLines(
+    short: AudioFeatureAverages,
+    topGenres: GenreCount[],
+    redFlags: RedFlagArtist[],
+    medium: AudioFeatureAverages | undefined,
+    avgTrackAgeYears: number
+): string[] {
+    const lines: string[] = [];
+
+    // 1. Red flag artist roasts (max 2)
+    for (const rf of redFlags.slice(0, 2)) {
+        lines.push(rf.roast);
+    }
+
+    // 2. Audio feature roasts — find most extreme
+    if (lines.length < 4) {
+        const featureValues: Record<string, number> = {
+            valence: short.valence,
+            energy: short.energy,
+            danceability: short.danceability,
+            acousticness: short.acousticness,
+            instrumentalness: short.instrumentalness,
+            speechiness: short.speechiness,
+            minorRatio: short.minorRatio,
+            tempo: short.tempo,
+            loudness: short.loudness,
+            avgPopularity: short.avgPopularity,
+        };
+
+        for (const roast of AUDIO_FEATURE_ROASTS) {
+            if (lines.length >= 4) break;
+            const val = featureValues[roast.field];
+            if (val === undefined) continue;
+            const triggered =
+                (roast.condition === 'gt' && val > roast.threshold) ||
+                (roast.condition === 'lt' && val < roast.threshold);
+            if (triggered) {
+                const display = roast.field === 'minorRatio'
+                    ? Math.round(val * 100).toString()
+                    : roast.field === 'tempo' || roast.field === 'avgPopularity'
+                        ? Math.round(val).toString()
+                        : val.toFixed(2);
+                lines.push(roast.template.replace('{value}', display));
+                break; // one audio feature roast max per pass
+            }
+        }
+    }
+
+    // 3. Genre roasts
+    if (lines.length < 4 && topGenres.length > 0) {
+        for (const g of topGenres) {
+            if (lines.length >= 4) break;
+            const key = g.genre.toLowerCase();
+            if (GENRE_ROASTS[key]) {
+                lines.push(GENRE_ROASTS[key]);
+                break;
+            }
+            // Partial match
+            for (const [roastKey, roastLine] of Object.entries(GENRE_ROASTS)) {
+                if (key.includes(roastKey) || roastKey.includes(key)) {
+                    lines.push(roastLine);
+                    break;
+                }
+            }
+        }
+    }
+
+    // 4. Emotional drift roast
+    if (lines.length < 4 && medium) {
+        const valenceDrift = medium.valence - short.valence;
+        for (const dr of DRIFT_ROASTS) {
+            if (lines.length >= 4) break;
+            const triggered =
+                (dr.condition === 'gt' && valenceDrift > dr.threshold) ||
+                (dr.condition === 'lt' && valenceDrift < dr.threshold);
+            if (triggered) {
+                lines.push(dr.template.replace('{pct}', Math.round(Math.abs(valenceDrift) * 100).toString()));
+                break;
+            }
+        }
+    }
+
+    // 5. Music age roast
+    if (lines.length < 4 && avgTrackAgeYears > 0) {
+        const currentYear = new Date().getFullYear();
+        const musicYear = currentYear - Math.round(avgTrackAgeYears);
+        for (const ar of MUSIC_AGE_ROASTS) {
+            if (lines.length >= 4) break;
+            const triggered =
+                (ar.condition === 'gt' && avgTrackAgeYears > ar.threshold) ||
+                (ar.condition === 'lt' && avgTrackAgeYears < ar.threshold);
+            if (triggered) {
+                lines.push(
+                    ar.template
+                        .replace('{age}', Math.round(avgTrackAgeYears).toString())
+                        .replace('{year}', musicYear.toString())
+                );
+                break;
+            }
+        }
+    }
+
+    return lines.slice(0, 4);
 }
