@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface ConfirmDialogProps {
     open: boolean;
@@ -19,14 +19,17 @@ export default function ConfirmDialog({
     onCancel,
     variant = 'default',
 }: ConfirmDialogProps) {
+    const onCancelRef = useRef(onCancel);
+    onCancelRef.current = onCancel;
+
     useEffect(() => {
         if (!open) return;
         const handleKey = (e: KeyboardEvent) => {
-            if (e.key === 'Escape') onCancel();
+            if (e.key === 'Escape') onCancelRef.current();
         };
         window.addEventListener('keydown', handleKey);
         return () => window.removeEventListener('keydown', handleKey);
-    }, [open, onCancel]);
+    }, [open]);
 
     if (!open) return null;
 

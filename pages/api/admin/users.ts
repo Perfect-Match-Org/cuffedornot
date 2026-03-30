@@ -20,6 +20,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const limit = Math.min(500, Math.max(1, parseInt(req.query.limit as string) || 100));
     const search = (req.query.search as string) || '';
 
+    const SORT_FIELD_MAP: Record<string, string> = {
+        email: 'email',
+        firstName: 'firstName',
+        profileComplete: 'profileComplete',
+        optIn: 'optIn',
+        unmatchable: 'unmatchable',
+        matchedWith: 'matchedWith',
+        matchPlatonic: 'matchPlatonic',
+        hasSpotifyData: 'spotifyData.collectedAt',
+        verdict: 'scores.verdict',
+        cuffedOrNotScore: 'scores.cuffedOrNotScore',
+    };
+    const rawSortField = (req.query.sortField as string) || 'email';
+    const sortDir = req.query.sortDir === 'desc' ? -1 : 1;
+    const mongoSortField = SORT_FIELD_MAP[rawSortField] ?? 'email';
+
     const filter: Record<string, unknown> = {};
     if (search) {
         filter.email = { $regex: search, $options: 'i' };
@@ -28,6 +44,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     const [docs, total] = await Promise.all([
         CuffedOrNotUser.find(filter)
             .select('email firstName profileComplete optIn unmatchable matchedWith matchPlatonic scores.verdict scores.cuffedOrNotScore spotifyData.collectedAt')
+            .sort({ [mongoSortField]: sortDir })
             .skip((page - 1) * limit)
             .limit(limit)
             .lean(),

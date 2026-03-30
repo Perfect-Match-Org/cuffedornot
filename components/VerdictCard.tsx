@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ScoreResult } from '@/types/spotify';
 import {
     Radar,
@@ -74,6 +75,9 @@ export default function VerdictCard({
     onRedo,
     onOptIn,
 }: VerdictCardProps) {
+    const [currentYear, setCurrentYear] = useState<number | null>(null);
+    useEffect(() => { setCurrentYear(new Date().getFullYear()); }, []);
+
     const isInsufficient = result.verdict === INSUFFICIENT;
 
     return (
@@ -222,7 +226,7 @@ export default function VerdictCard({
                     {result.audioFeatures && result.audioFeatures.avgTrackAgeYears > 0 && (
                         <div className="rounded-2xl border border-gray-200 bg-white p-5 text-center">
                             {(() => {
-                                const musicAgeYear = new Date().getFullYear() - Math.round(result.audioFeatures.avgTrackAgeYears);
+                                const musicAgeYear = (currentYear ?? new Date().getFullYear()) - Math.round(result.audioFeatures.avgTrackAgeYears);
                                 return (
                                     <>
                                         <p className="font-work-sans text-xs text-gray-500 uppercase tracking-wide mb-1">

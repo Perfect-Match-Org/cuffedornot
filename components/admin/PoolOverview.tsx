@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface AdminUser {
     email: string;
@@ -52,7 +52,7 @@ export default function PoolOverview() {
     const fetchUsers = useCallback(async () => {
         setLoading(true);
         try {
-            const params = new URLSearchParams({ page: String(page) });
+            const params = new URLSearchParams({ page: String(page), sortField, sortDir });
             if (debouncedSearch) params.set('search', debouncedSearch);
             const res = await fetch(`/api/admin/users?${params}`);
             if (!res.ok) return;
@@ -65,26 +65,14 @@ export default function PoolOverview() {
         } finally {
             setLoading(false);
         }
-    }, [page, debouncedSearch]);
+    }, [page, debouncedSearch, sortField, sortDir]);
 
     useEffect(() => {
         fetchUsers();
     }, [fetchUsers]);
 
-    const sorted = useMemo(() => {
-        return [...users].sort((a, b) => {
-            const av = a[sortField];
-            const bv = b[sortField];
-            if (av == null && bv == null) return 0;
-            if (av == null) return 1;
-            if (bv == null) return -1;
-            if (typeof av === 'boolean') return sortDir === 'asc' ? (av === bv ? 0 : av ? -1 : 1) : (av === bv ? 0 : av ? 1 : -1);
-            if (typeof av === 'number') return sortDir === 'asc' ? (av as number) - (bv as number) : (bv as number) - (av as number);
-            return sortDir === 'asc' ? String(av).localeCompare(String(bv)) : String(bv).localeCompare(String(av));
-        });
-    }, [users, sortField, sortDir]);
-
     const toggleSort = (field: SortField) => {
+        setPage(1);
         if (sortField === field) {
             setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'));
         } else {
@@ -95,7 +83,7 @@ export default function PoolOverview() {
 
     const downloadCsv = () => {
         const header = COLUMNS.map((c) => c.label).join(',');
-        const rows = sorted.map((u) =>
+        const rows = users.map((u) =>
             COLUMNS.map((c) => {
                 const v = u[c.key];
                 if (v === null || v === undefined) return '';
@@ -165,14 +153,14 @@ export default function PoolOverview() {
                                     Loading...
                                 </td>
                             </tr>
-                        ) : sorted.length === 0 ? (
+                        ) : users.length === 0 ? (
                             <tr>
                                 <td colSpan={COLUMNS.length} className="px-3 py-6 text-center text-gray-400">
                                     No users found
                                 </td>
                             </tr>
                         ) : (
-                            sorted.map((u) => (
+                            users.map((u) => (
                                 <tr key={u.email} className="even:bg-gray-50 border-t border-gray-100">
                                     <td className="px-3 py-2 truncate max-w-[200px]" title={u.email}>{u.email}</td>
                                     <td className="px-3 py-2">{u.firstName ?? '—'}</td>

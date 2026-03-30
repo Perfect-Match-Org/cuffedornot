@@ -81,6 +81,10 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
     const apiResultRef = useRef<ApiResult | null>(null);
     const apiErrorRef = useRef<{ error: string; retryAfter?: number } | null>(null);
     const hasCompletedRef = useRef(false);
+    const onCompleteRef = useRef(onComplete);
+    onCompleteRef.current = onComplete;
+    const onErrorRef = useRef(onError);
+    onErrorRef.current = onError;
 
     useEffect(() => {
         // Listen for API result
@@ -112,7 +116,7 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
             if (apiErrorRef.current && !hasCompletedRef.current) {
                 hasCompletedRef.current = true;
                 clearInterval(interval);
-                onError(apiErrorRef.current);
+                onErrorRef.current(apiErrorRef.current);
                 return;
             }
 
@@ -136,7 +140,7 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
                 clearInterval(interval);
                 setProgress(100);
                 // Small delay for the 100% snap animation
-                setTimeout(() => onComplete(apiResultRef.current!), 400);
+                setTimeout(() => onCompleteRef.current(apiResultRef.current!), 400);
                 return;
             }
 
@@ -144,14 +148,6 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
             if (phase === 2 && elapsed > 15000 && !apiResultRef.current) {
                 setMessage('Taking longer than expected, hang tight...');
                 return;
-            }
-
-            // If API responded while still in phase 2 past 6s, jump to phase 3
-            if (phase === 2 && elapsed >= 6000 && apiResultRef.current) {
-                phase = 3;
-                personalizedMsgs = generatePersonalizedMessages(apiResultRef.current);
-                p3MsgIndex = 0;
-                lastMsgTime = elapsed;
             }
 
             // Progress bar
@@ -186,7 +182,7 @@ export default function LoadingExperience({ apiPromise, onComplete, onError }: L
         }, TICK);
 
         return () => clearInterval(interval);
-    }, [apiPromise, onComplete, onError]);
+    }, [apiPromise]);
 
     return (
         <div className="flex flex-col items-center justify-center py-12 gap-6 w-full max-w-md mx-auto">
