@@ -36,7 +36,19 @@ function VibeShiftSection({
             : audioFeatures.energy >= 0.5 ? 'Intense' : 'Brooding';
     const current = MOOD_QUADRANT_LABELS[currentQuadrant] ?? currentQuadrant;
 
-    if (prev === current) return null;
+    if (prev === current) {
+        return (
+            <div className="rounded-2xl border border-gray-200 bg-white p-5 text-center">
+                <p className="font-work-sans text-xs text-gray-500 uppercase tracking-wide mb-2">
+                    Vibe Check
+                </p>
+                <p className="font-dela-gothic text-lg text-pmblue2-800">{current}</p>
+                <p className="font-work-sans text-sm text-gray-500 mt-2">
+                    Your vibe held steady. Consistent.
+                </p>
+            </div>
+        );
+    }
 
     return (
         <div className="rounded-2xl border border-gray-200 bg-white p-5 text-center">
@@ -136,7 +148,7 @@ export default function VerdictCard({
                             {result.roastLines.map((line, i) => (
                                 <div
                                     key={i}
-                                    className="rounded-xl bg-pmpink2-500/10 p-4 font-work-sans text-sm text-gray-700"
+                                    className="rounded-xl bg-pmpink2-500/10 p-4 font-work-sans text-sm text-gray-700 opacity-0 animate-fade-in"
                                     style={{ animationDelay: `${i * 200}ms` }}
                                 >
                                     {line}
@@ -154,12 +166,12 @@ export default function VerdictCard({
                             <ResponsiveContainer width="100%" height={280}>
                                 <RadarChart
                                     data={[
-                                        { axis: 'Happiness', value: result.audioFeatures.valence },
+                                        { axis: 'Valence', value: result.audioFeatures.valence },
                                         { axis: 'Energy', value: result.audioFeatures.energy },
                                         { axis: 'Danceability', value: result.audioFeatures.danceability },
-                                        { axis: 'Acoustic', value: result.audioFeatures.acousticness },
-                                        { axis: 'Instrumental', value: result.audioFeatures.instrumentalness },
-                                        { axis: 'Speech', value: result.audioFeatures.speechiness },
+                                        { axis: 'Acousticness', value: result.audioFeatures.acousticness },
+                                        { axis: 'Instrumentalness', value: result.audioFeatures.instrumentalness },
+                                        { axis: 'Speechiness', value: result.audioFeatures.speechiness },
                                     ]}
                                 >
                                     <PolarGrid stroke="#e5e7eb" />
