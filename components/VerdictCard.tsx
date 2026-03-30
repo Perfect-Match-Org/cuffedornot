@@ -287,11 +287,6 @@ export default function VerdictCard({
                     </button>
                 )}
 
-                {alreadyOptedIn && (
-                    <p className="font-work-sans text-sm text-gray-600 text-center">
-                        You&apos;re in the matching pool! Check back April 1 at 8pm.
-                    </p>
-                )}
 
                 {!optInOpen && (
                     <p className="font-work-sans text-sm text-gray-500 text-center">

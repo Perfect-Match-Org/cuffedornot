@@ -8,7 +8,9 @@ interface ProfileFormProps {
         openToPlatonic: boolean;
     };
     optInOpen: boolean;
+    alreadyOptedIn: boolean;
     onOptedIn: () => void;
+    onOptedOut: () => void;
 }
 
 const GENDER_OPTIONS = [
@@ -30,15 +32,17 @@ const ATTRACTION_OPTIONS = [
     'Prefer not to say',
 ];
 
-type FormState = 'idle' | 'submitting' | 'success' | 'opted_out';
+type FormState = 'idle' | 'editing' | 'submitting' | 'success' | 'updated' | 'opted_out';
 
 export default function ProfileForm({
     firstName,
     initialProfile,
     optInOpen,
+    alreadyOptedIn,
     onOptedIn,
+    onOptedOut,
 }: ProfileFormProps) {
-    const [formState, setFormState] = useState<FormState>('idle');
+    const [formState, setFormState] = useState<FormState>(alreadyOptedIn ? 'idle' : 'idle');
     const [genderIdentity, setGenderIdentity] = useState(initialProfile?.genderIdentity ?? '');
     const [attractionPreference, setAttractionPreference] = useState<string[]>(
         initialProfile?.attractionPreference ?? []
@@ -49,11 +53,18 @@ export default function ProfileForm({
 
     if (!optInOpen) return null;
 
-    const canSubmit =
+    // For new submissions, require the opt-in checkbox
+    const canSubmitNew =
         genderIdentity !== '' &&
         attractionPreference.length > 0 &&
         optInChecked &&
         formState === 'idle';
+
+    // For edits, no opt-in checkbox needed
+    const canSubmitEdit =
+        genderIdentity !== '' &&
+        attractionPreference.length > 0 &&
+        formState === 'editing';
 
     function toggleAttraction(option: string) {
         setAttractionPreference((prev) =>
@@ -63,12 +74,13 @@ export default function ProfileForm({
 
     async function handleSubmit(e: FormEvent) {
         e.preventDefault();
-        if (!canSubmit) return;
+        const isEdit = alreadyOptedIn;
+        if (isEdit ? !canSubmitEdit : !canSubmitNew) return;
         setFormState('submitting');
         setError(null);
         try {
             const res = await fetch('/api/profile', {
-                method: 'POST',
+                method: isEdit ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ genderIdentity, attractionPreference, openToPlatonic }),
             });
@@ -79,14 +91,18 @@ export default function ProfileForm({
             }
             if (!res.ok) {
                 setError('Something went wrong. Please try again.');
-                setFormState('idle');
+                setFormState(isEdit ? 'editing' : 'idle');
                 return;
             }
-            setFormState('success');
-            onOptedIn();
+            if (isEdit) {
+                setFormState('updated');
+            } else {
+                setFormState('success');
+                onOptedIn();
+            }
         } catch {
             setError('Something went wrong. Please try again.');
-            setFormState('idle');
+            setFormState(isEdit ? 'editing' : 'idle');
         }
     }
 
@@ -98,6 +114,7 @@ export default function ProfileForm({
                 return;
             }
             setFormState('opted_out');
+            onOptedOut();
         } catch {
             setError('Something went wrong. Please try again.');
         }
@@ -114,6 +131,7 @@ export default function ProfileForm({
         );
     }
 
+    // Post-submission confirmation (new opt-in)
     if (formState === 'success') {
         return (
             <div className="rounded-2xl border-2 border-pmpink2-500 bg-white shadow-[4px_4px_0px_#FFC8E3] p-6 text-center">
@@ -131,11 +149,62 @@ export default function ProfileForm({
         );
     }
 
+    // Post-update confirmation
+    if (formState === 'updated') {
+        return (
+            <div className="rounded-2xl border-2 border-pmpink2-500 bg-white shadow-[4px_4px_0px_#FFC8E3] p-6 text-center">
+                <p className="font-dela-gothic text-pmblue2-800 text-2xl mb-2">Profile updated!</p>
+                <p className="font-work-sans text-gray-600 text-sm mb-5">
+                    Your matching preferences have been saved.
+                </p>
+                <button
+                    onClick={handleOptOut}
+                    className="font-work-sans text-xs text-gray-400 underline hover:text-gray-600 transition-colors cursor-pointer"
+                >
+                    Not feeling it? Opt out.
+                </button>
+            </div>
+        );
+    }
+
+    // Already opted in — show summary with edit/opt-out actions
+    if (alreadyOptedIn && formState === 'idle') {
+        return (
+            <div className="rounded-2xl border-2 border-pmpink2-500 bg-white shadow-[4px_4px_0px_#FFC8E3] p-6 text-center">
+                <p className="font-dela-gothic text-pmblue2-800 text-2xl mb-2">You&apos;re in!</p>
+                <p className="font-work-sans text-gray-600 text-sm mb-5">
+                    Check back April 1 at 8pm to see your match.
+                </p>
+                <div className="flex justify-center gap-4">
+                    <button
+                        onClick={() => setFormState('editing')}
+                        className="font-work-sans text-xs text-pmblue-500 underline hover:text-pmblue2-800 transition-colors cursor-pointer"
+                    >
+                        Update profile
+                    </button>
+                    <button
+                        onClick={handleOptOut}
+                        className="font-work-sans text-xs text-gray-400 underline hover:text-gray-600 transition-colors cursor-pointer"
+                    >
+                        Opt out
+                    </button>
+                </div>
+            </div>
+        );
+    }
+
+    // Profile form (new submission or editing)
+    const isEditing = formState === 'editing';
+
     return (
         <div className="rounded-2xl border-2 border-pmpink2-500 bg-white shadow-[4px_4px_0px_#FFC8E3] p-6">
-            <h2 className="font-dela-gothic text-pmblue2-800 text-2xl mb-1">Get matched</h2>
+            <h2 className="font-dela-gothic text-pmblue2-800 text-2xl mb-1">
+                {isEditing ? 'Update profile' : 'Get matched'}
+            </h2>
             <p className="font-work-sans text-gray-500 text-sm mb-6">
-                Fill out your profile to enter the matching pool.
+                {isEditing
+                    ? 'Update your matching preferences.'
+                    : 'Fill out your profile to enter the matching pool.'}
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
@@ -219,18 +288,20 @@ export default function ProfileForm({
                 {/* Divider */}
                 <hr className="border-pmpink2-500" />
 
-                {/* Opt in */}
-                <label className="flex items-start gap-3 cursor-pointer">
-                    <input
-                        type="checkbox"
-                        checked={optInChecked}
-                        onChange={(e) => setOptInChecked(e.target.checked)}
-                        className="mt-0.5 w-4 h-4 rounded border-2 border-pmblue2-500 accent-pmblue-500 cursor-pointer"
-                    />
-                    <span className="font-work-sans text-sm text-gray-700">
-                        I want to be matched with another Cornell student based on my music taste.
-                    </span>
-                </label>
+                {/* Opt in checkbox — only for new submissions */}
+                {!isEditing && (
+                    <label className="flex items-start gap-3 cursor-pointer">
+                        <input
+                            type="checkbox"
+                            checked={optInChecked}
+                            onChange={(e) => setOptInChecked(e.target.checked)}
+                            className="mt-0.5 w-4 h-4 rounded border-2 border-pmblue2-500 accent-pmblue-500 cursor-pointer"
+                        />
+                        <span className="font-work-sans text-sm text-gray-700">
+                            I want to be matched with another Cornell student based on my music taste.
+                        </span>
+                    </label>
+                )}
 
                 {error && (
                     <p className="font-work-sans text-xs text-pmred-500" role="alert">
@@ -238,13 +309,29 @@ export default function ProfileForm({
                     </p>
                 )}
 
-                <button
-                    type="submit"
-                    disabled={!canSubmit}
-                    className="w-full min-h-[48px] rounded-full border-4 border-pmblue-500 bg-white px-8 py-3 font-work-sans font-semibold text-pmblue-500 shadow-[4px_4px_0px_#24438d] transition-all hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-[4px_4px_0px_#24438d] disabled:translate-x-0 disabled:translate-y-0 cursor-pointer"
-                >
-                    {formState === 'submitting' ? 'Submitting...' : "I'm in — match me!"}
-                </button>
+                <div className="flex flex-col items-center gap-3">
+                    <button
+                        type="submit"
+                        disabled={isEditing ? !canSubmitEdit : !canSubmitNew}
+                        className="w-full min-h-[48px] rounded-full border-4 border-pmblue-500 bg-white px-8 py-3 font-work-sans font-semibold text-pmblue-500 shadow-[4px_4px_0px_#24438d] transition-all hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-[4px_4px_0px_#24438d] disabled:translate-x-0 disabled:translate-y-0 cursor-pointer"
+                    >
+                        {formState === 'submitting'
+                            ? 'Submitting...'
+                            : isEditing
+                                ? 'Save changes'
+                                : "I'm in — match me!"}
+                    </button>
+
+                    {isEditing && (
+                        <button
+                            type="button"
+                            onClick={() => setFormState('idle')}
+                            className="font-work-sans text-xs text-gray-400 underline hover:text-gray-600 transition-colors cursor-pointer"
+                        >
+                            Cancel
+                        </button>
+                    )}
+                </div>
             </form>
         </div>
     );
