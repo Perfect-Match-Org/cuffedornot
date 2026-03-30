@@ -170,12 +170,10 @@ export default function VerdictCard({
                             <ResponsiveContainer width="100%" height={280}>
                                 <RadarChart
                                     data={[
-                                        { axis: 'Valence', value: result.audioFeatures.valence },
-                                        { axis: 'Energy', value: result.audioFeatures.energy },
-                                        { axis: 'Danceability', value: result.audioFeatures.danceability },
-                                        { axis: 'Acousticness', value: result.audioFeatures.acousticness },
-                                        { axis: 'Instrumentalness', value: result.audioFeatures.instrumentalness },
-                                        { axis: 'Speechiness', value: result.audioFeatures.speechiness },
+                                        { axis: 'Valence', value: Math.round(result.audioFeatures.valence * 100) },
+                                        { axis: 'Energy', value: Math.round(result.audioFeatures.energy * 100) },
+                                        { axis: 'Danceability', value: Math.round(result.audioFeatures.danceability * 100) },
+                                        { axis: 'Acousticness', value: Math.round(result.audioFeatures.acousticness * 100) },
                                     ]}
                                 >
                                     <PolarGrid stroke="#e5e7eb" />

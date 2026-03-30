@@ -29,7 +29,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         profileComplete: user.profileComplete,
         optIn: user.optIn,
         profile: user.profile ?? null,
-        scores: user.scores ?? null,
+        scores: user.scores ? {
+            ...user.scores,
+            audioFeatures: user.spotifyData?.shortTerm?.audioFeatureAverages ?? null
+        } : null,
         hasSpotifyData: !!user.spotifyData?.collectedAt,
         config: {
             optInOpen: config.optInOpen,
