@@ -237,6 +237,7 @@ export default function MainFlow() {
         <>
             <VerdictCard
                 result={state.result}
+                firstName={firstName}
                 optInOpen={state.optInOpen}
                 alreadyOptedIn={state.alreadyOptedIn}
                 onRedo={() => setState({ phase: 'idle' })}

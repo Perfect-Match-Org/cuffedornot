@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import { toPng } from 'html-to-image';
+import html2canvas from 'html2canvas';
 import { ScoreResult } from '@/types/spotify';
 import {
     Radar,
@@ -12,6 +12,7 @@ import { DIVERSITY_TIERS, getMusicAgeSubtitle, MOOD_QUADRANT_LABELS } from '@/li
 
 interface VerdictCardProps {
     result: ScoreResult;
+    firstName: string;
     optInOpen: boolean;
     alreadyOptedIn: boolean;
     onRedo: () => void;
@@ -71,6 +72,7 @@ function VibeShiftSection({
 
 export default function VerdictCard({
     result,
+    firstName,
     optInOpen,
     alreadyOptedIn,
     onRedo,
@@ -86,10 +88,10 @@ export default function VerdictCard({
 
     const handleShare = useCallback(async () => {
         try {
-            // iOS Safari: text-only share (html-to-image fails with custom fonts on iOS)
+            // iOS Safari: text-only share (image generation unreliable on iOS)
             if (isIOS && navigator.share) {
                 await navigator.share({
-                    text: `${result.verdict} \u2014 ${result.score}/100 on Cuffed or Not!\ncuffedornot.perfectmatch.ai`,
+                    text: `${result.verdict} \u2014 ${Math.round(result.score)}/100 on Cuffed or Not!\ncuffedornot.perfectmatch.ai`,
                 });
                 return;
             }
@@ -97,7 +99,16 @@ export default function VerdictCard({
             if (!shareCardRef.current) return;
 
             await document.fonts.ready;
-            const dataUrl = await toPng(shareCardRef.current, { pixelRatio: 2 });
+            // Temporarily reveal for capture (z-index -1 keeps it behind page content)
+            const el = shareCardRef.current;
+            el.style.opacity = '1';
+            const canvas = await html2canvas(el, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff',
+            });
+            el.style.opacity = '0';
+            const dataUrl = canvas.toDataURL('image/png');
 
             // Mobile with Web Share API: share as PNG file
             if (navigator.share && navigator.canShare) {
@@ -120,7 +131,7 @@ export default function VerdictCard({
                 console.warn('Share failed:', err);
             }
         }
-    }, [result.verdict, result.score, isIOS]);
+    }, [result, firstName, isIOS]);
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-6">
@@ -316,38 +327,85 @@ export default function VerdictCard({
                 <div
                     ref={shareCardRef}
                     aria-hidden
-                    style={{ position: 'absolute', left: '-9999px', top: 0 }}
-                    className="w-[400px] bg-white rounded-2xl border-2 border-pmpink2-500 p-8 space-y-4"
+                    style={{ position: 'fixed', left: 0, top: 0, opacity: 0, pointerEvents: 'none', zIndex: -9999 }}
+                    className="w-[420px] bg-white rounded-2xl border-2 border-pmpink2-500 p-7 space-y-3"
                 >
-                    <p className="font-dela-gothic text-4xl text-pmred-500 text-center">
+                    {/* Header */}
+                    <p className="font-work-sans text-xs text-gray-400 text-center uppercase tracking-widest">
+                        {firstName ? `${firstName}\u2019s Spotify says...` : 'Your Spotify says...'}
+                    </p>
+
+                    {/* Verdict */}
+                    <p className="font-dela-gothic text-4xl text-pmred-500 text-center leading-tight">
                         {result.verdict}
                     </p>
+
+                    {/* Tagline */}
+                    <p className="font-work-sans text-sm text-gray-500 text-center italic">
+                        {result.tagline}
+                    </p>
+
+                    {/* Score bar */}
                     <div>
-                        <div className="flex justify-between font-work-sans text-xs text-gray-500 mb-1">
+                        <div className="flex justify-between font-work-sans text-xs text-gray-400 mb-1">
                             <span>Cuffed</span>
                             <span>Single</span>
                         </div>
-                        <div className="h-4 rounded-full bg-pmpink2-500 overflow-hidden">
+                        <div className="h-5 rounded-full bg-pmpink2-500 overflow-hidden">
                             <div
                                 className="h-full rounded-full bg-pmred-500"
                                 style={{ width: `${Math.max(2, result.score)}%` }}
                             />
                         </div>
-                        <p className="font-work-sans text-sm text-gray-500 text-right mt-1">
-                            {result.score}/100
+                        <p className="font-dela-gothic text-lg text-pmred-500 text-right mt-1">
+                            {Math.round(result.score)}/100
                         </p>
                     </div>
+
+                    {/* Divider */}
+                    <div className="border-t border-pmpink2-500" />
+
+                    {/* Roast */}
                     {result.roastLines?.[0] && (
-                        <p className="font-work-sans text-sm text-gray-700 text-center italic">
-                            &ldquo;{result.roastLines[0]}&rdquo;
+                        <div className="bg-pmpink2-500/20 rounded-xl px-4 py-3">
+                            <p className="font-work-sans text-sm text-gray-700 text-center italic leading-relaxed">
+                                &ldquo;{result.roastLines[0]}&rdquo;
+                            </p>
+                        </div>
+                    )}
+
+                    {/* Red flag artist callout */}
+                    {result.redFlagArtists?.[0] && (
+                        <p className="font-work-sans text-xs text-gray-500 text-center">
+                            Caught listening to <span className="font-semibold text-pmred-500">{result.redFlagArtists[0].name}</span>
                         </p>
                     )}
+
+                    {/* Audio stats row */}
+                    {result.audioFeatures && (
+                        <div className="flex justify-between gap-2">
+                            {[
+                                { label: 'Vibe', value: `${Math.round(result.audioFeatures.valence * 100)}%` },
+                                { label: 'Energy', value: `${Math.round(result.audioFeatures.energy * 100)}%` },
+                                { label: 'Dance', value: `${Math.round(result.audioFeatures.danceability * 100)}%` },
+                            ].map((stat) => (
+                                <div key={stat.label} className="flex-1 bg-gray-50 rounded-lg py-2 text-center">
+                                    <p className="font-dela-gothic text-base text-pmblue2-800">{stat.value}</p>
+                                    <p className="font-work-sans text-xs text-gray-400">{stat.label}</p>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
+                    {/* Listening personality */}
                     {result.listeningPersonality && (
-                        <p className="font-dela-gothic text-base text-pmblue2-800 text-center">
+                        <p className="font-dela-gothic text-sm text-pmblue-500 text-center">
                             {result.listeningPersonality}
                         </p>
                     )}
-                    <p className="font-work-sans text-xs text-gray-400 text-center pt-2">
+
+                    {/* Footer */}
+                    <p className="font-work-sans text-xs text-gray-300 text-center pt-1">
                         cuffedornot.perfectmatch.ai
                     </p>
                 </div>
