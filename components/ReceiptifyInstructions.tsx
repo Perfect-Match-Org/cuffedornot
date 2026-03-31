@@ -29,11 +29,6 @@ export default function ReceiptifyInstructions() {
                     </li>
                 ))}
             </ol>
-
-            {/* Screenshot placeholder */}
-            <div className="mt-5 rounded-xl bg-gray-100 border border-gray-200 h-28 flex items-center justify-center">
-                <span className="font-work-sans text-gray-400 text-sm">Screenshot placeholder</span>
-            </div>
         </div>
     );
 }

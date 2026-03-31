@@ -112,8 +112,8 @@ function CountdownScreen({ remaining }: { remaining: number }) {
                 <p className="font-work-sans text-gray-500 text-sm mb-2">
                     Come back April 1 at 8pm
                 </p>
-                <p className="font-dela-gothic text-pmred-500 text-5xl tabular-nums">
-                    {remaining > 0 ? formatCountdown(remaining) : '00:00:00'}
+                <p className={`font-dela-gothic text-pmred-500 ${remaining > 0 ? 'text-5xl tabular-nums' : 'text-2xl'}`}>
+                    {remaining > 0 ? formatCountdown(remaining) : 'Your match is almost ready...'}
                 </p>
             </div>
         </div>
