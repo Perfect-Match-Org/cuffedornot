@@ -2,6 +2,8 @@ import Head from 'next/head';
 import Link from 'next/link';
 import { ReactNode } from 'react';
 import { useSession, signOut } from 'next-auth/react';
+import { Analytics } from "@vercel/analytics/next"
+import { SpeedInsights } from "@vercel/speed-insights/next"
 
 interface LayoutProps {
     children: ReactNode;
@@ -35,6 +37,8 @@ export default function Layout({ children }: LayoutProps) {
                 </nav>
                 <main>{children}</main>
             </div>
+            <Analytics />
+            <SpeedInsights />
         </>
     );
 }
