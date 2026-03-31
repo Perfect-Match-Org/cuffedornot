@@ -334,9 +334,10 @@ export function computeFinalScore(spotifyData: SpotifyDataForScoring): {
 
     // Base Score: Absolute Taste
     // We compute an absolute genre sadness value to pair with Audio Features
-    const genreSadness = shortGenres.length > 0
-        ? shortGenres.slice(0, 15).reduce((s, g) => s + lookupGenreSadness(g.genre) * g.count, 0) / 
-          Math.max(1, shortGenres.slice(0, 15).reduce((s, g) => s + g.count, 0))
+    const top15 = shortGenres.slice(0, 15);
+    const totalCount = top15.reduce((s, g) => s + g.count, 0);
+    const genreSadness = totalCount > 0
+        ? top15.reduce((s, g) => s + lookupGenreSadness(g.genre) * g.count, 0) / totalCount
         : 0.5;
 
     // Blend explicit Genre Sadness with Audio Features for a natural 0-1 spread

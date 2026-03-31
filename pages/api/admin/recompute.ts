@@ -28,7 +28,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             'spotifyData.collectedAt': { $exists: true, $ne: null }
         }).select('email spotifyData scores').lean();
 
-        let updatedCount = 0;
+        const bulkOps: Parameters<typeof CuffedOrNotUser.bulkWrite>[0] = [];
 
         for (const user of users) {
             const sd = user.spotifyData;
@@ -53,24 +53,25 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             const scoreResult = computeFinalScore(spotifyDataForScoring);
             if (!scoreResult) continue;
 
-            const esValue = computeESValue(sd.shortTerm.audioFeatureAverages, sd.shortTerm.topGenres);
-            const rentfrowVector = computeRentfrowVector(sd.shortTerm.audioFeatureAverages, sd.shortTerm.topGenres);
-            const moodQuadrant = computeMoodQuadrant(sd.shortTerm.audioFeatureAverages);
-
             const computedScores = {
                 ...scoreResult,
-                esValue,
-                rentfrowVector,
-                moodQuadrant,
+                esValue: computeESValue(sd.shortTerm.audioFeatureAverages, sd.shortTerm.topGenres),
+                rentfrowVector: computeRentfrowVector(sd.shortTerm.audioFeatureAverages, sd.shortTerm.topGenres),
+                moodQuadrant: computeMoodQuadrant(sd.shortTerm.audioFeatureAverages),
             };
 
-            await CuffedOrNotUser.updateOne(
-                { email: user.email },
-                { $set: { scores: computedScores } }
-            );
-
-            updatedCount++;
+            bulkOps.push({
+                updateOne: {
+                    filter: { email: user.email },
+                    update: { $set: { scores: computedScores } }
+                }
+            });
         }
+
+        if (bulkOps.length > 0) {
+            await CuffedOrNotUser.bulkWrite(bulkOps);
+        }
+        const updatedCount = bulkOps.length;
 
         return res.status(200).json({ 
             success: true, 

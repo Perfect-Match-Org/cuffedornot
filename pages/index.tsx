@@ -22,7 +22,7 @@ function HowItWorks() {
                 >
                     <path d="M6.293 4.293a1 1 0 011.414 0L14 10.586l-6.293 6.293a1 1 0 01-1.414-1.414L11.172 10.5 6.293 5.707a1 1 0 010-1.414z" />
                 </svg>
-ex                Frequently Asked Questions
+                Frequently Asked Questions
             </button>
             <div
                 className="grid transition-[grid-template-rows] duration-300 ease-out"
