@@ -350,20 +350,29 @@ export function computeFinalScore(spotifyData: SpotifyDataForScoring): {
         signal5: s5,
     };
 
-    let weightedScore: number;
+    // Base Score: Absolute Taste
+    const baseScore = s1 * 0.85 + s5 * 0.15;
 
+    // Average Drift
+    let avgDrift = 0.5;
     if (s2 !== null && s3 !== null && s4 !== null) {
-        // All 5 signals: 0.40 / 0.25 / 0.20 / 0.10 / 0.05
-        weightedScore = s1 * 0.40 + s2 * 0.25 + s3 * 0.20 + s4 * 0.10 + s5 * 0.05;
+        avgDrift = s2 * 0.50 + s3 * 0.35 + s4 * 0.15;
     } else if (s3 !== null && s4 !== null) {
-        // short + long only (no medium): skip signal 2, renormalize 1,3,4,5 → 0.53/0.27/0.13/0.07
-        weightedScore = s1 * 0.53 + s3 * 0.27 + s4 * 0.13 + s5 * 0.07;
-    } else {
-        // short only: signals 1 + 5 → 0.89/0.11
-        weightedScore = s1 * 0.89 + s5 * 0.11;
+        avgDrift = s3 * 0.70 + s4 * 0.30;
     }
 
-    const score = clamp(nanGuard(weightedScore * 100, 50), 0, 100);
+    // Multiply: 0.5 drift = 1.0x, ±40% swing -> 0.6x to 1.4x
+    const multiplier = 1.0 + (avgDrift - 0.5) * 0.8;
+
+    const rawScore = (baseScore * 100) * multiplier;
+    
+    // Stretch the tight natural cluster (usually 35-55) across the full 0-100 spectrum
+    // By re-centering around 45 and multiplying the distance by 2.2x
+    let stretchedScore = (rawScore - 45) * 2.2 + 50;
+    
+    const score = clamp(nanGuard(stretchedScore, 50), 0, 100);
+    
+    // Confidence is purely distance from neutral
     const confidence = Math.abs(score - 50) * 2;
     const { verdict, tagline } = getVerdict(score);
 
