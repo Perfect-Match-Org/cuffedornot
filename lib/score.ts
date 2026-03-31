@@ -446,7 +446,15 @@ export function generateRoastLines(
 
     // 1. Red flag artist roasts (max 2)
     for (const rf of redFlags.slice(0, 2)) {
-        lines.push(rf.roast);
+        const intros = [
+            `Ah, ${rf.name}.`,
+            `Listening to ${rf.name}?`,
+            `We need to talk about your ${rf.name} obsession.`,
+            `Spotted ${rf.name} in your rotation.`,
+            `Of course you listen to ${rf.name}.`
+        ];
+        const intro = intros[Math.floor(Math.random() * intros.length)];
+        lines.push(`${intro} ${rf.roast}`);
     }
 
     // 2. Audio feature roasts — find most extreme
