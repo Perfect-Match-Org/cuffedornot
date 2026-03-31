@@ -1,40 +1,61 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# CuffedOrNot
+
+Are you cuffed or not? We asked your Spotify and it told us everything.
+
+CuffedOrNot is a Cornell University event where students paste their Receiptify URL, get roasted by an algorithm, and find out their relationship status based on nothing but music taste. Deployed at [cuffedornot.perfectmatch.ai](https://cuffedornot.perfectmatch.ai) as part of the [PerfectMatch](https://perfectmatch.ai) platform.
+
+## Stack
+
+- Next.js 14 (Pages Router) + TypeScript
+- Tailwind CSS 3.4
+- MongoDB + Mongoose
+- next-auth v4 (Google OAuth, Cornell `.edu` only)
+- Recharts
 
 ## Getting Started
 
-First, run the development server:
-
 ```bash
+npm install
+cp .env.example .env.local
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Open [http://localhost:3000](http://localhost:3000).
 
-You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
+You'll need the following in your `.env.local` (see `.env.example` for the full list):
 
-[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
+```
+MONGODB_URI
+GOOGLE_CLIENT_ID
+GOOGLE_CLIENT_SECRET
+NEXTAUTH_SECRET
+NEXTAUTH_URL
+```
 
-The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
+## How It Works
 
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
+1. Sign in with a Cornell `.edu` Google account.
+2. Head over to [Receiptify](https://receiptify.herokuapp.com) and log in with Spotify. Once you're looking at your receipt, copy the URL from your browser.
+3. Paste it in. We pull your top tracks and artists across short, medium, and long term — all server-side, your token never touches our logs.
+4. The algorithm looks at things like your recent emotional vibe, how your mood has shifted over time, and whether your genre taste has been taking a concerning turn. You get a score from 0–100 and a verdict.
+5. Optionally get matched with someone else who submitted. Matches are released after the event.
 
-## Learn More
+## Scoring
 
-To learn more about Next.js, take a look at the following resources:
+Your score is based on five signals derived from your Spotify audio features — valence, genre drift, mood shifts over time, and a couple other things. Higher score = more cuffed. The breakdown is intentionally opaque (it's more fun that way).
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Matching
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+After the event closes, matching runs locally via `scripts/run_matching.py`. It uses `scipy` to compute optimal 1-to-1 pairings and writes results back to MongoDB.
 
-## Deploy on Vercel
+```bash
+cd scripts
+# Windows: setup.bat  |  Unix: ./setup.sh
+python run_matching.py
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Development Notes
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+- Spotify's extended API access is locked down for new apps, so we route through Receiptify's token. This means all Spotify calls run server-side under Receiptify's OAuth client — be mindful of rate limits during peak traffic.
+- The matching script requires Python + scipy and is intentionally not on Vercel. Run it locally after collecting submissions.
+- Admin panel lives at `/admin` and is gated by a hardcoded email list in `config/admins.ts`.
