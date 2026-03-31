@@ -37,7 +37,7 @@ export const AUDIO_FEATURE_ROASTS: AudioFeatureRoast[] = [
     { field: 'speechiness', condition: 'gt', threshold: 0.50, template: "More podcasts than playlists? That's not a music taste, that's an identity crisis." },
     // minor key ratio
     { field: 'minorRatio', condition: 'gt', threshold: 0.90, template: "{value}% minor key. Taking prelims is breaking your spirit." },
-    { field: 'minorRatio', condition: 'gt', threshold: 0.70, template: "{value}% of your music is in minor key. That's not a vibe, that's a diagnosis." },
+    { field: 'minorRatio', condition: 'gt', threshold: 0.70, template: "{value}% of your music is in minor key. That's not a vibe, that's a dramatic monologue." },
     { field: 'minorRatio', condition: 'lt', threshold: 0.20, template: "Only {value}% minor key. You aggressively refuse to be sad and it's suspicious." },
     // tempo
     { field: 'tempo', condition: 'gt', threshold: 170, template: 'Average BPM of {value}. Power walking up the slope energy.' },
@@ -68,12 +68,39 @@ export const GENRE_ROASTS: Record<string, string> = {
     'metal': "Metal fan. You express your emotions through screaming and that's honestly valid for prelim season.",
     'death metal': "Death metal fan. Just a normal reaction to checking Canvas.",
     'jazz': "Jazz listener. You've described yourself as 'an old soul' at least twice this semester.",
-    'hyperpop': 'Hyperpop? Your music taste sounds like a migraine. You belong in an Annex basement.',
+    'hyperpop': 'Hyperpop? Your music taste sounds like a broken printer. You belong in an Annex basement.',
     'shoegaze': 'Shoegaze fan. You stare at your shoes walking across the arts quad.',
     'dream pop': "Dream pop listener. Your entire aesthetic is 'ethereal sadness' on the slope.",
     'trap': "Trap heavy rotation. You're playing this on a massive speaker while walking to class.",
     'r&b': "R&B top genre. You're a romantic but you won't admit it.",
     'punk': "Punk fan. You're anti-establishment but still submitted your Receiptify link.",
+    'anime': "Anime OSTs on repeat. We get it, you're the main character in your head.",
+    'j-pop': "J-Pop listener. Your Spotify Wrapped is definitely in a language you don't actually speak.",
+    'c-pop': "C-Pop in rotation. You're definitely heartbroken over an unnecessarily long idol drama.",
+    'mandopop': "Mandopop fan. You've definitely cried in a karaoke room at least once.",
+    'soundtrack': "Movie soundtracks? You're treating your walk to Duffield like a cinematic masterpiece.",
+    'indie': "Indie top genre. You're definitely wearing a tote bag right now.",
+    'folk': "Folk music. You own a flannel for every day of the week and romanticize the winter blues.",
+    'hip hop': "Hip Hop heavy rotation. You probably think you could survive on Hot Ones.",
+    'rap': "Rap fan. You definitely critique the mixing on a first listen.",
+    'house': "House music. You've convinced yourself that an overpriced mocktail in Brooklyn is a religious experience.",
+    'techno': "Techno listener. You exclusively wear black clothing and pretend you don't get tired at 2 AM.",
+    'reggaeton': "Reggaeton fan. Perreo on the weekends, crying over Canvas assignments on the weekdays.",
+    'math rock': "Math rock. You definitely talk to people who aren't listening about time signatures.",
+    'singer-songwriter': "Singer-songwriter. You love feeling emotionally devastated in acoustic.",
+    'show tunes': "Show tunes. You treat every minor inconvenience like the end of Act I.",
+    'musical theatre': "Musical theatre. You definitely over-enunciate when you order at Starbucks.",
+    'bossa nova': "Bossa nova. You're trying to pretend your dorm room is a chic Parisian cafe.",
+    'afrobeats': "Afrobeats. You actually have rhythm, which means you carry every party you attend.",
+    'pop punk': "Pop punk never died, it just grew up, got back pain, and started paying off student loans.",
+    'k-indie': "K-indie fan. You curate perfectly aesthetic Instagram dumps but refuse to text people back.",
+    'city pop': "City pop. You're nostalgic for a Tokyo summer in 1984 that you never even experienced.",
+    'french pop': "French pop. You've read Albert Camus exactly once and made it your personality.",
+    'bluegrass': "Bluegrass. You definitely own overalls and have unnecessarily strong opinions about banjos.",
+    'grunge': "Grunge fan. You definitely wear combat boots even when it's 80 degrees outside.",
+    'classic rock': "Classic rock. You were totally 'born in the wrong generation.' We've all heard it.",
+    'jazz rap': "Jazz rap. You think you're intellectually superior because your hip hop has saxophones.",
+    'latin pop': "Latin pop. You listen to Bad Bunny while cramming for finals, pretending you're at the club."
 };
 
 // ---------------------------------------------------------------------------
@@ -87,10 +114,10 @@ export interface DriftRoast {
 }
 
 export const DRIFT_ROASTS: DriftRoast[] = [
-    { condition: 'gt', threshold: 0.25, template: "Emotional nosedive detected. Your Spotify went through the five stages of grief and got stuck on depression." },
+    { condition: 'gt', threshold: 0.25, template: "Emotional nosedive detected. Your Spotify went through the five stages of grief and got stuck on pure angst." },
     { condition: 'gt', threshold: 0.15, template: "Your music got {pct}% sadder in the last 6 months. We don't know what happened but the algorithm sends its condolences." },
     { condition: 'lt', threshold: -0.25, template: "Massive happiness spike detected. Either you fell in love or you're overcompensating. The algorithm is watching." },
-    { condition: 'lt', threshold: -0.15, template: 'Your music got {pct}% happier recently. New relationship or new antidepressants?' },
+    { condition: 'lt', threshold: -0.15, template: 'Your music got {pct}% happier recently. New relationship or did you finally get eight hours of sleep?' },
 ];
 
 // ---------------------------------------------------------------------------

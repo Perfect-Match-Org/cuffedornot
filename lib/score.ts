@@ -170,7 +170,7 @@ const VERDICT_TIERS: { minScore: number; maxScore: number; verdict: string; tagl
         taglines: [
             "We get it, you're in love. Touch grass.",
             "Your playlist is a love letter. Disgusting.",
-            "Spotify has filed a restraining order on behalf of single people.",
+            "Spotify is begging you to go outside.",
         ],
     },
     {
@@ -200,7 +200,7 @@ const VERDICT_TIERS: { minScore: number; maxScore: number; verdict: string; tagl
         taglines: [
             "The algorithm can't tell — and honestly neither can you.",
             "Vibes unclear. Please re-examine your situationship.",
-            "50/50. Could be cuffed, could be delusional. Good luck.",
+            "50/50. Could be cuffed, could be imagining it. Good luck.",
         ],
     },
     {
