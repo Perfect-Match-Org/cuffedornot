@@ -494,13 +494,13 @@ export function generateRoastLines(
             if (lines.length >= 4) break;
             const key = g.genre.toLowerCase();
             if (GENRE_ROASTS[key]) {
-                lines.push(GENRE_ROASTS[key]);
+                if (!lines.includes(GENRE_ROASTS[key])) lines.push(GENRE_ROASTS[key]);
                 break;
             }
             // Partial match
             for (const [roastKey, roastLine] of Object.entries(GENRE_ROASTS)) {
                 if (key.includes(roastKey) || roastKey.includes(key)) {
-                    lines.push(roastLine);
+                    if (!lines.includes(roastLine)) lines.push(roastLine);
                     break;
                 }
             }

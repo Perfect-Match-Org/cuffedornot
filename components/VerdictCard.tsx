@@ -231,7 +231,7 @@ export default function VerdictCard({
                             <h3 className="font-dela-gothic text-lg text-pmblue2-800 text-center">
                                 The Algorithm&apos;s Verdict
                             </h3>
-                            {result.roastLines.map((line, i) => (
+                            {[...new Set(result.roastLines)].map((line, i) => (
                                 <div
                                     key={i}
                                     className="rounded-xl bg-pmpink2-500/10 p-4 font-work-sans text-sm text-gray-700 opacity-0 animate-fade-in"
