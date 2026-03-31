@@ -4,7 +4,7 @@ export default function ReceiptifyInstructions() {
             <h2 className="font-dela-gothic text-lg text-pmblue2-800 mb-4">
                 How to get your Receiptify URL
             </h2>
-            <ol className="space-y-4">
+            <ol className="space-y-4 mb-6">
                 {[
                     <>
                         Go to{' '}
@@ -29,6 +29,9 @@ export default function ReceiptifyInstructions() {
                     </li>
                 ))}
             </ol>
+            <p className="text-xs text-pmblue-400 font-work-sans mb-4">
+                <i>Disclaimer: We are not affiliated, associated, authorized, endorsed by, or in any way officially connected with Receiptify or Spotify. We just use Receiptify as an easy way for you to grab your own listening data.</i>
+            </p>
         </div>
     );
 }
