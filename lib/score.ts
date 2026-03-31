@@ -48,15 +48,19 @@ function loudnessFactor(loudness: number): number {
 }
 
 export function signal1_valenceProfile(short: AudioFeatureAverages): number {
+    // Normalize core audio features based on realistic Spotify API ranges
+    // rather than relying on theoretical [0,1] bounds.
+    const normValence = clamp((short.valence - 0.2) / 0.6, 0, 1);
+    const normEnergy = clamp((short.energy - 0.3) / 0.6, 0, 1);
+    const normAcoustic = clamp(short.acousticness / 0.8, 0, 1);
+
+    // Heavy focus on the strong emotional predictors
     const score =
-        (1 - short.valence) * 0.28 +
-        (1 - short.danceability) * 0.17 +
-        (1 - short.energy) * 0.13 +
-        short.acousticness * 0.10 +
-        short.instrumentalness * 0.05 +
-        short.minorRatio * 0.15 +
-        tempoFactor(short.tempo) * 0.07 +
-        loudnessFactor(short.loudness) * 0.05;
+        (1 - normValence) * 0.50 +
+        (1 - normEnergy) * 0.25 +
+        normAcoustic * 0.15 +
+        short.minorRatio * 0.10;
+
     return clamp(nanGuard(score, 0.5), 0, 1);
 }
 
@@ -224,7 +228,7 @@ const VERDICT_TIERS: { minScore: number; maxScore: number; verdict: string; tagl
         maxScore: 101,
         verdict: 'Chronically Single',
         taglines: [
-            "Your music is a cry for help. We matched you anyway.",
+            "Your music is a cry for help. A match might be your only hope.",
             "You've been down bad so long it's just your personality now.",
             "The algorithm is concerned. Please hydrate and go outside.",
         ],
@@ -351,7 +355,14 @@ export function computeFinalScore(spotifyData: SpotifyDataForScoring): {
     };
 
     // Base Score: Absolute Taste
-    const baseScore = s1 * 0.85 + s5 * 0.15;
+    // We compute an absolute genre sadness value to pair with Audio Features
+    const genreSadness = shortGenres.length > 0
+        ? shortGenres.slice(0, 15).reduce((s, g) => s + lookupGenreSadness(g.genre) * g.count, 0) / 
+          Math.max(1, shortGenres.slice(0, 15).reduce((s, g) => s + g.count, 0))
+        : 0.5;
+
+    // Blend explicit Genre Sadness with Audio Features for a natural 0-1 spread
+    const baseScore = genreSadness * 0.45 + s1 * 0.45 + s5 * 0.10;
 
     // Average Drift
     let avgDrift = 0.5;
@@ -366,11 +377,7 @@ export function computeFinalScore(spotifyData: SpotifyDataForScoring): {
 
     const rawScore = (baseScore * 100) * multiplier;
     
-    // Stretch the tight natural cluster (usually 35-55) across the full 0-100 spectrum
-    // By re-centering around 45 and multiplying the distance by 2.2x
-    let stretchedScore = (rawScore - 45) * 2.2 + 50;
-    
-    const score = clamp(nanGuard(stretchedScore, 50), 0, 100);
+    const score = clamp(nanGuard(rawScore, 50), 0, 100);
     
     // Confidence is purely distance from neutral
     const confidence = Math.abs(score - 50) * 2;
