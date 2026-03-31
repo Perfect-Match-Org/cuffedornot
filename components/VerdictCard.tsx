@@ -85,6 +85,8 @@ export default function VerdictCard({
 
     const shareCardRef = useRef<HTMLDivElement>(null);
     const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
+    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const [shareFeedback, setShareFeedback] = useState<string | null>(null);
 
     const handleShare = useCallback(async () => {
         try {
@@ -99,7 +101,7 @@ export default function VerdictCard({
             if (!shareCardRef.current) return;
 
             await document.fonts.ready;
-            // Temporarily reveal for capture (z-index -1 keeps it behind page content)
+            // Temporarily reveal for capture (z-index keeps it behind page content)
             const el = shareCardRef.current;
             el.style.opacity = '1';
             const canvas = await html2canvas(el, {
@@ -108,11 +110,13 @@ export default function VerdictCard({
                 backgroundColor: '#ffffff',
             });
             el.style.opacity = '0';
-            const dataUrl = canvas.toDataURL('image/png');
 
-            // Mobile with Web Share API: share as PNG file
-            if (navigator.share && navigator.canShare) {
-                const blob = await (await fetch(dataUrl)).blob();
+            const blob = await new Promise<Blob>((resolve) =>
+                canvas.toBlob((b) => resolve(b!), 'image/png')
+            );
+
+            // Mobile: use Web Share API with file
+            if (isMobile && navigator.share && navigator.canShare) {
                 const file = new File([blob], 'cuffed-or-not.png', { type: 'image/png' });
                 if (navigator.canShare({ files: [file] })) {
                     await navigator.share({ files: [file] });
@@ -120,18 +124,31 @@ export default function VerdictCard({
                 }
             }
 
-            // Desktop fallback: download as PNG
+            // Desktop: copy image to clipboard
+            if (navigator.clipboard && typeof ClipboardItem !== 'undefined') {
+                await navigator.clipboard.write([
+                    new ClipboardItem({ 'image/png': blob }),
+                ]);
+                setShareFeedback('Copied to clipboard!');
+                setTimeout(() => setShareFeedback(null), 2000);
+                return;
+            }
+
+            // Final fallback: download as PNG
+            const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.download = 'cuffed-or-not.png';
-            link.href = dataUrl;
+            link.href = url;
             link.click();
+            URL.revokeObjectURL(url);
+            setShareFeedback('Image downloaded!');
+            setTimeout(() => setShareFeedback(null), 2000);
         } catch (err) {
-            // User cancelled share or toPng failed — ignore
             if (err instanceof Error && err.name !== 'AbortError') {
                 console.warn('Share failed:', err);
             }
         }
-    }, [result, firstName, isIOS]);
+    }, [result, firstName, isIOS, isMobile]);
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-6">
@@ -425,7 +442,7 @@ export default function VerdictCard({
                         onClick={handleShare}
                         className="min-h-[44px] rounded-full border-2 border-pmred-500 px-6 py-2 font-work-sans text-sm text-pmred-500 hover:bg-pmred-500 hover:text-white transition-colors cursor-pointer"
                     >
-                        Share your result
+                        {shareFeedback ?? 'Share your result'}
                     </button>
                 )}
 
