@@ -1,5 +1,4 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
-import html2canvas from 'html2canvas';
 import { ScoreResult } from '@/types/spotify';
 import {
     Radar,
@@ -103,17 +102,24 @@ export default function VerdictCard({
             await document.fonts.ready;
             // Temporarily reveal for capture (z-index keeps it behind page content)
             const el = shareCardRef.current;
-            el.style.opacity = '1';
-            const canvas = await html2canvas(el, {
-                scale: 2,
-                useCORS: true,
-                backgroundColor: '#ffffff',
-            });
-            el.style.opacity = '0';
+            const html2canvas = (await import('html2canvas')).default;
+            let canvas;
+            try {
+                el.style.opacity = '1';
+                canvas = await html2canvas(el, {
+                    scale: 2,
+                    useCORS: true,
+                    backgroundColor: '#ffffff',
+                });
+            } finally {
+                el.style.opacity = '0';
+            }
 
-            const blob = await new Promise<Blob>((resolve) =>
-                canvas.toBlob((b) => resolve(b!), 'image/png')
+            const blob = await new Promise<Blob | null>((resolve) =>
+                canvas.toBlob(resolve, 'image/png')
             );
+
+            if (!blob) return;
 
             // Mobile: use Web Share API with file
             if (isMobile && navigator.share && navigator.canShare) {
