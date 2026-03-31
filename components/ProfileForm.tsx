@@ -321,7 +321,7 @@ export default function ProfileForm({
                     <button
                         type="submit"
                         disabled={isEditing ? !canSubmitEdit : !canSubmitNew}
-                        className="w-full min-h-[48px] rounded-full border-4 border-pmblue-500 bg-white px-8 py-3 font-work-sans font-semibold text-pmblue-500 shadow-[4px_4px_0px_#24438d] transition-all hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-[4px_4px_0px_#24438d] disabled:translate-x-0 disabled:translate-y-0 cursor-pointer"
+                        className="w-full min-h-[48px] rounded-full border-4 border-pmblue-500 bg-white px-8 py-3 font-work-sans font-semibold text-pmred-500 shadow-[6px_6px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[2px_2px_0px_0px_rgba(36,67,141,1)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-[6px_6px_0px_0px_rgba(36,67,141,1)] disabled:translate-x-0 disabled:translate-y-0 cursor-pointer"
                     >
                         {formState === 'submitting'
                             ? 'Submitting...'

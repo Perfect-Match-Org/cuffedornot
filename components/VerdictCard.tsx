@@ -41,7 +41,7 @@ function VibeShiftSection({
 
     if (prev === current) {
         return (
-            <div className="rounded-2xl border border-gray-200 bg-white p-5 text-center">
+            <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5 text-center">
                 <p className="font-work-sans text-xs text-gray-500 uppercase tracking-wide mb-2">
                     Vibe Check
                 </p>
@@ -54,7 +54,7 @@ function VibeShiftSection({
     }
 
     return (
-        <div className="rounded-2xl border border-gray-200 bg-white p-5 text-center">
+        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5 text-center">
             <p className="font-work-sans text-xs text-gray-500 uppercase tracking-wide mb-2">
                 Vibe Shift Detected
             </p>
@@ -270,7 +270,7 @@ export default function VerdictCard({
 
                     {/* Section 4 — Genre Diversity */}
                     {result.genreDiversity !== undefined && result.genreDiversity > 0 && (
-                        <div className="rounded-2xl border border-gray-200 bg-white p-5 text-center">
+                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5 text-center">
                             {(() => {
                                 const tier = getDiversityTier(result.genreDiversity);
                                 return (
@@ -292,7 +292,7 @@ export default function VerdictCard({
 
                     {/* Section 5 — Music Age */}
                     {result.audioFeatures && result.audioFeatures.avgTrackAgeYears > 0 && (
-                        <div className="rounded-2xl border border-gray-200 bg-white p-5 text-center">
+                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5 text-center">
                             {(() => {
                                 const musicAgeYear = (currentYear ?? new Date().getFullYear()) - Math.round(result.audioFeatures.avgTrackAgeYears);
                                 return (
@@ -322,7 +322,7 @@ export default function VerdictCard({
 
                     {/* Section 7 — Evidence Bullets */}
                     {result.evidenceBullets.length > 0 && (
-                        <div className="rounded-2xl border border-gray-200 bg-white p-5">
+                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5">
                             <h3 className="font-dela-gothic text-sm text-gray-500 uppercase tracking-wide mb-3">
                                 The Data
                             </h3>
@@ -432,7 +432,7 @@ export default function VerdictCard({
             <div className="flex flex-col items-center gap-3 pt-2">
                 <button
                     onClick={onRedo}
-                    className="min-h-[44px] rounded-full border-2 border-pmblue-500 px-6 py-2 font-work-sans text-sm text-pmblue-500 hover:bg-pmblue2-500 transition-colors cursor-pointer"
+                    className="min-h-[44px] rounded-full border-2 border-pmblue-500 px-6 py-2 font-work-sans text-sm text-pmblue-500 shadow-[3px_3px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_rgba(36,67,141,1)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none cursor-pointer"
                 >
                     Try a different URL
                 </button>
@@ -440,7 +440,7 @@ export default function VerdictCard({
                 {!isInsufficient && (
                     <button
                         onClick={handleShare}
-                        className="min-h-[44px] rounded-full border-2 border-pmred-500 px-6 py-2 font-work-sans text-sm text-pmred-500 hover:bg-pmred-500 hover:text-white transition-colors cursor-pointer"
+                        className="min-h-[44px] rounded-full border-2 border-pmred-500 px-6 py-2 font-work-sans text-sm text-pmred-500 shadow-[3px_3px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_rgba(36,67,141,1)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none cursor-pointer"
                     >
                         {shareFeedback ?? 'Share your result'}
                     </button>
@@ -449,7 +449,7 @@ export default function VerdictCard({
                 {optInOpen && !alreadyOptedIn && (
                     <button
                         onClick={onOptIn}
-                        className="min-h-[48px] w-full max-w-xs rounded-full border-4 border-pmblue-500 bg-white px-8 py-3 font-work-sans font-semibold text-pmblue-500 shadow-[4px_4px_0px_#24438d] transition-all hover:shadow-none hover:translate-x-[4px] hover:translate-y-[4px] cursor-pointer"
+                        className="min-h-[48px] w-full max-w-xs rounded-full border-4 border-pmblue-500 bg-white px-8 py-3 font-work-sans font-semibold text-pmred-500 shadow-[6px_6px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[2px_2px_0px_0px_rgba(36,67,141,1)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none cursor-pointer"
                     >
                         Want to get matched?
                     </button>
