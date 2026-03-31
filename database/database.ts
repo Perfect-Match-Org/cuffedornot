@@ -17,6 +17,9 @@ export async function connect() {
         mongoose.set('strictQuery', false);
         cached.promise = mongoose.connect(MONGODB_URI, {
             bufferCommands: false,
+            maxPoolSize: 1,           // serverless: one request per instance, pool of 1 is correct
+            serverSelectionTimeoutMS: 5000,
+            socketTimeoutMS: 45000,
         });
     }
 

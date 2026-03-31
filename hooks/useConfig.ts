@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 interface AppConfig {
     optInOpen: boolean;
@@ -6,16 +6,20 @@ interface AppConfig {
     matchingRun: boolean;
 }
 
+const REFETCH_INTERVAL_MS = 3 * 60 * 1000; // 3 minutes — admin flags change 2–3 times per event
+
 /**
- * Fetches /api/me on mount and re-fetches whenever the window regains focus.
- * Future optimisation: replace the /api/me call with a dedicated /api/config
- * endpoint that returns only the three boolean flags, avoiding a full DB user
- * lookup on every revalidation.
+ * Fetches /api/me on mount and re-fetches whenever the window regains focus,
+ * but at most once every 3 minutes (client-side time gate on the ref).
+ * Focus revalidation is kept over polling — zero background requests when idle.
  */
 export function useConfig() {
     const [config, setConfig] = useState<AppConfig | null>(null);
+    const lastFetchedAt = useRef<number>(0);
 
     const fetchConfig = useCallback(async () => {
+        if (Date.now() - lastFetchedAt.current < REFETCH_INTERVAL_MS) return;
+        lastFetchedAt.current = Date.now();
         try {
             const res = await fetch('/api/me');
             if (!res.ok) return;
