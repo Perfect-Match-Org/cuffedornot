@@ -83,11 +83,15 @@ export default function VerdictCard({
     const isInsufficient = result.verdict === INSUFFICIENT;
 
     const shareCardRef = useRef<HTMLDivElement>(null);
-    const isIOS = typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent);
-    const isMobile = typeof navigator !== 'undefined' && /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+    const isModernIPad = typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
+    const isIOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || isModernIPad);
+    const isMobile = typeof navigator !== 'undefined' && (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || isModernIPad);
     const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+    const [isSharing, setIsSharing] = useState(false);
 
     const handleShare = useCallback(async () => {
+        if (isSharing) return;
+        setIsSharing(true);
         try {
             // iOS Safari: text-only share (image generation unreliable on iOS)
             if (isIOS && navigator.share) {
@@ -146,15 +150,17 @@ export default function VerdictCard({
             link.download = 'cuffed-or-not.png';
             link.href = url;
             link.click();
-            URL.revokeObjectURL(url);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
             setShareFeedback('Image downloaded!');
             setTimeout(() => setShareFeedback(null), 2000);
         } catch (err) {
             if (err instanceof Error && err.name !== 'AbortError') {
                 console.warn('Share failed:', err);
             }
+        } finally {
+            setIsSharing(false);
         }
-    }, [result, firstName, isIOS, isMobile]);
+    }, [result, firstName, isIOS, isMobile, isSharing, isModernIPad]);
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-6">
@@ -446,9 +452,10 @@ export default function VerdictCard({
                 {!isInsufficient && (
                     <button
                         onClick={handleShare}
-                        className="min-h-[44px] rounded-full border-2 border-pmred-500 px-6 py-2 font-work-sans text-sm text-pmred-500 shadow-[3px_3px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_rgba(36,67,141,1)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none cursor-pointer"
+                        disabled={isSharing}
+                        className="min-h-[44px] rounded-full border-2 border-pmred-500 px-6 py-2 font-work-sans text-sm text-pmred-500 shadow-[3px_3px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_rgba(36,67,141,1)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:shadow-[3px_3px_0px_0px_rgba(36,67,141,1)]"
                     >
-                        {shareFeedback ?? 'Share your result'}
+                        {shareFeedback ?? (isSharing ? 'Sharing...' : 'Share your result')}
                     </button>
                 )}
 
