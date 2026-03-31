@@ -7,7 +7,7 @@ import Layout from "@/components/Layout";
 export default function App({ Component, pageProps }: AppProps<{ session: Session }>) {
     const { session, ...rest } = pageProps;
     return (
-        <SessionProvider session={session}>
+        <SessionProvider session={session} refetchOnWindowFocus={false}>
             <Layout>
                 <Component {...rest} />
             </Layout>
