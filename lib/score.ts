@@ -25,28 +25,6 @@ function nanGuard(v: number, fallback: number): number {
 // Signal 1 — Valence Profile (40% weight)
 // ---------------------------------------------------------------------------
 
-function tempoFactor(tempo: number): number {
-    if (tempo < 80) {
-        // linear: 80→0.70
-        return 0.70;
-    } else if (tempo <= 120) {
-        // linear interpolation 80→0.70, 120→0.25
-        return 0.70 + ((tempo - 80) / (120 - 80)) * (0.25 - 0.70);
-    } else if (tempo <= 140) {
-        // linear interpolation 120→0.25, 140→0.10
-        return 0.25 + ((tempo - 120) / (140 - 120)) * (0.10 - 0.25);
-    } else {
-        // > 140 → 0.55
-        return 0.55;
-    }
-}
-
-function loudnessFactor(loudness: number): number {
-    if (loudness < -15) return 0.70;
-    if (loudness <= -8) return 0.40;
-    return 0.15;
-}
-
 export function signal1_valenceProfile(short: AudioFeatureAverages): number {
     // Normalize core audio features based on realistic Spotify API ranges
     // rather than relying on theoretical [0,1] bounds.
