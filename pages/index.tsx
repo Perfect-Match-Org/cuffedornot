@@ -22,7 +22,7 @@ function HowItWorks() {
                 >
                     <path d="M6.293 4.293a1 1 0 011.414 0L14 10.586l-6.293 6.293a1 1 0 01-1.414-1.414L11.172 10.5 6.293 5.707a1 1 0 010-1.414z" />
                 </svg>
-                How does this work?
+                Frequently Asked Questions
             </button>
             <div
                 className="grid transition-[grid-template-rows] duration-300 ease-out"
@@ -44,6 +44,9 @@ function HowItWorks() {
                         <p>
                             <strong>Is my data safe?</strong> Your Spotify data is stored only for this event
                             and is never sold or shared outside Cornell PerfectMatch.
+                        </p>
+                        <p>
+                            <strong>Disclaimer:</strong> The algorithm is designed to playfully roast your music taste. The verdicts are completely unserious, highly subjective, and for entertainment purposes only. Please don't take it personally!
                         </p>
                     </div>
                 </div>
