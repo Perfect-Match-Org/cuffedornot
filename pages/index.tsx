@@ -22,7 +22,7 @@ function HowItWorks() {
                 >
                     <path d="M6.293 4.293a1 1 0 011.414 0L14 10.586l-6.293 6.293a1 1 0 01-1.414-1.414L11.172 10.5 6.293 5.707a1 1 0 010-1.414z" />
                 </svg>
-                How does this work?
+                Frequently Asked Questions
             </button>
             <div
                 className="grid transition-[grid-template-rows] duration-300 ease-out"
@@ -44,6 +44,9 @@ function HowItWorks() {
                         <p>
                             <strong>Is my data safe?</strong> Your Spotify data is stored only for this event
                             and is never sold or shared outside Cornell PerfectMatch.
+                        </p>
+                        <p>
+                            <strong>Disclaimer:</strong> The algorithm is designed to playfully roast your music taste. The verdicts are completely unserious, highly subjective, and for entertainment purposes only. Please don&apos;t take it personally!
                         </p>
                     </div>
                 </div>
@@ -177,10 +180,47 @@ export default function Home() {
                 </div>
             </section>
 
+            {/* ── Creator Credit ── */}
+            <section className="bg-pmpink2-500 border-t border-pmblue2-500 px-6 py-12">
+                <div className="max-w-2xl mx-auto text-center">
+                    <p className="font-work-sans text-lg font-extrabold uppercase tracking-widest text-pmblue-500 mb-4">
+                        A Collaboration
+                    </p>
+                    <p className="font-work-sans text-pmblue-500 text-sm sm:text-base leading-relaxed mb-6 max-w-lg mx-auto">
+                        CuffedOrNot is a collaboration between Cornell PerfectMatch and{' '}
+                        <a
+                            href="https://unseriousventures.com/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="underline font-semibold hover:text-pmred-500 transition-colors"
+                        >
+                            Unserious Ventures
+                        </a>
+                        {' '}by Spenser Wu, who brought the original idea to life.
+                    </p>
+                    <a
+                        href="https://spenserwu.com/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block font-work-sans font-semibold text-sm text-pmred-500 border-2 border-pmblue-500 rounded-full px-6 py-2 shadow-[4px_4px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(36,67,141,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none"
+                    >
+                        spenserwu.com
+                    </a>
+                </div>
+            </section>
+
             {/* ── Footer ── */}
-            <footer className="bg-white border-t border-pmblue2-500 px-6 py-6 text-center">
+            <footer className="bg-white border-t border-pmblue2-500 px-6 py-6 text-center space-y-2">
                 <p className="font-work-sans text-xs text-gray-400">
                     &copy; Cornell PerfectMatch 2026
+                </p>
+                <p className="font-work-sans text-xs text-gray-400">
+                    Algorithm grounded in{' '}
+                    <a href="https://doi.org/10.1037/0022-3514.84.6.1236" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Rentfrow &amp; Gosling (2003)</a>
+                    {' · '}
+                    <a href="https://doi.org/10.1371/journal.pone.0131151" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Greenberg et al. (2015)</a>
+                    {' · '}
+                    <a href="https://doi.org/10.1177/00332941211013806" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">Anderson et al. (2021)</a>
                 </p>
             </footer>
         </>

@@ -25,38 +25,20 @@ function nanGuard(v: number, fallback: number): number {
 // Signal 1 — Valence Profile (40% weight)
 // ---------------------------------------------------------------------------
 
-function tempoFactor(tempo: number): number {
-    if (tempo < 80) {
-        // linear: 80→0.70
-        return 0.70;
-    } else if (tempo <= 120) {
-        // linear interpolation 80→0.70, 120→0.25
-        return 0.70 + ((tempo - 80) / (120 - 80)) * (0.25 - 0.70);
-    } else if (tempo <= 140) {
-        // linear interpolation 120→0.25, 140→0.10
-        return 0.25 + ((tempo - 120) / (140 - 120)) * (0.10 - 0.25);
-    } else {
-        // > 140 → 0.55
-        return 0.55;
-    }
-}
-
-function loudnessFactor(loudness: number): number {
-    if (loudness < -15) return 0.70;
-    if (loudness <= -8) return 0.40;
-    return 0.15;
-}
-
 export function signal1_valenceProfile(short: AudioFeatureAverages): number {
+    // Normalize core audio features based on realistic Spotify API ranges
+    // rather than relying on theoretical [0,1] bounds.
+    const normValence = clamp((short.valence - 0.2) / 0.6, 0, 1);
+    const normEnergy = clamp((short.energy - 0.3) / 0.6, 0, 1);
+    const normAcoustic = clamp(short.acousticness / 0.8, 0, 1);
+
+    // Heavy focus on the strong emotional predictors
     const score =
-        (1 - short.valence) * 0.28 +
-        (1 - short.danceability) * 0.17 +
-        (1 - short.energy) * 0.13 +
-        short.acousticness * 0.10 +
-        short.instrumentalness * 0.05 +
-        short.minorRatio * 0.15 +
-        tempoFactor(short.tempo) * 0.07 +
-        loudnessFactor(short.loudness) * 0.05;
+        (1 - normValence) * 0.50 +
+        (1 - normEnergy) * 0.25 +
+        normAcoustic * 0.15 +
+        short.minorRatio * 0.10;
+
     return clamp(nanGuard(score, 0.5), 0, 1);
 }
 
@@ -166,7 +148,7 @@ const VERDICT_TIERS: { minScore: number; maxScore: number; verdict: string; tagl
         taglines: [
             "We get it, you're in love. Touch grass.",
             "Your playlist is a love letter. Disgusting.",
-            "Spotify has filed a restraining order on behalf of single people.",
+            "Spotify is begging you to go outside.",
         ],
     },
     {
@@ -196,7 +178,7 @@ const VERDICT_TIERS: { minScore: number; maxScore: number; verdict: string; tagl
         taglines: [
             "The algorithm can't tell — and honestly neither can you.",
             "Vibes unclear. Please re-examine your situationship.",
-            "50/50. Could be cuffed, could be delusional. Good luck.",
+            "50/50. Could be cuffed, could be imagining it. Good luck.",
         ],
     },
     {
@@ -224,7 +206,7 @@ const VERDICT_TIERS: { minScore: number; maxScore: number; verdict: string; tagl
         maxScore: 101,
         verdict: 'Chronically Single',
         taglines: [
-            "Your music is a cry for help. We matched you anyway.",
+            "Your music is a cry for help. A match might be your only hope.",
             "You've been down bad so long it's just your personality now.",
             "The algorithm is concerned. Please hydrate and go outside.",
         ],
@@ -350,20 +332,33 @@ export function computeFinalScore(spotifyData: SpotifyDataForScoring): {
         signal5: s5,
     };
 
-    let weightedScore: number;
+    // Base Score: Absolute Taste
+    // We compute an absolute genre sadness value to pair with Audio Features
+    const top15 = shortGenres.slice(0, 15);
+    const totalCount = top15.reduce((s, g) => s + g.count, 0);
+    const genreSadness = totalCount > 0
+        ? top15.reduce((s, g) => s + lookupGenreSadness(g.genre) * g.count, 0) / totalCount
+        : 0.5;
 
+    // Blend explicit Genre Sadness with Audio Features for a natural 0-1 spread
+    const baseScore = genreSadness * 0.45 + s1 * 0.45 + s5 * 0.10;
+
+    // Average Drift
+    let avgDrift = 0.5;
     if (s2 !== null && s3 !== null && s4 !== null) {
-        // All 5 signals: 0.40 / 0.25 / 0.20 / 0.10 / 0.05
-        weightedScore = s1 * 0.40 + s2 * 0.25 + s3 * 0.20 + s4 * 0.10 + s5 * 0.05;
+        avgDrift = s2 * 0.50 + s3 * 0.35 + s4 * 0.15;
     } else if (s3 !== null && s4 !== null) {
-        // short + long only (no medium): skip signal 2, renormalize 1,3,4,5 → 0.53/0.27/0.13/0.07
-        weightedScore = s1 * 0.53 + s3 * 0.27 + s4 * 0.13 + s5 * 0.07;
-    } else {
-        // short only: signals 1 + 5 → 0.89/0.11
-        weightedScore = s1 * 0.89 + s5 * 0.11;
+        avgDrift = s3 * 0.70 + s4 * 0.30;
     }
 
-    const score = clamp(nanGuard(weightedScore * 100, 50), 0, 100);
+    // Multiply: 0.5 drift = 1.0x, ±40% swing -> 0.6x to 1.4x
+    const multiplier = 1.0 + (avgDrift - 0.5) * 0.8;
+
+    const rawScore = (baseScore * 100) * multiplier;
+    
+    const score = clamp(nanGuard(rawScore, 50), 0, 100);
+    
+    // Confidence is purely distance from neutral
     const confidence = Math.abs(score - 50) * 2;
     const { verdict, tagline } = getVerdict(score);
 
@@ -494,13 +489,13 @@ export function generateRoastLines(
             if (lines.length >= 4) break;
             const key = g.genre.toLowerCase();
             if (GENRE_ROASTS[key]) {
-                lines.push(GENRE_ROASTS[key]);
+                if (!lines.includes(GENRE_ROASTS[key])) lines.push(GENRE_ROASTS[key]);
                 break;
             }
             // Partial match
             for (const [roastKey, roastLine] of Object.entries(GENRE_ROASTS)) {
                 if (key.includes(roastKey) || roastKey.includes(key)) {
-                    lines.push(roastLine);
+                    if (!lines.includes(roastLine)) lines.push(roastLine);
                     break;
                 }
             }
