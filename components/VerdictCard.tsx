@@ -84,7 +84,6 @@ export default function VerdictCard({
 
     const shareCardRef = useRef<HTMLDivElement>(null);
     const isModernIPad = typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1;
-    const isIOS = typeof navigator !== 'undefined' && (/iPad|iPhone|iPod/.test(navigator.userAgent) || isModernIPad);
     const isMobile = typeof navigator !== 'undefined' && (/Android|iPhone|iPad|iPod/i.test(navigator.userAgent) || isModernIPad);
     const [shareFeedback, setShareFeedback] = useState<string | null>(null);
     const [isSharing, setIsSharing] = useState(false);
@@ -93,14 +92,6 @@ export default function VerdictCard({
         if (isSharing) return;
         setIsSharing(true);
         try {
-            // iOS Safari: text-only share (image generation unreliable on iOS)
-            if (isIOS && navigator.share) {
-                await navigator.share({
-                    text: `${result.verdict} \u2014 ${Math.round(result.score)}/100 on Cuffed or Not!\ncuffedornot.perfectmatch.ai`,
-                });
-                return;
-            }
-
             if (!shareCardRef.current) return;
 
             await document.fonts.ready;
@@ -160,7 +151,7 @@ export default function VerdictCard({
         } finally {
             setIsSharing(false);
         }
-    }, [result, firstName, isIOS, isMobile, isSharing, isModernIPad]);
+    }, [result, firstName, isMobile, isSharing, isModernIPad]);
 
     return (
         <div className="w-full max-w-lg mx-auto space-y-6">
