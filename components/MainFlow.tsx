@@ -168,11 +168,6 @@ export default function MainFlow() {
         }
     };
 
-    const handleOptIn = () => {
-        const el = document.getElementById('optin-section');
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
-    };
-
     if (state.phase === 'loading_me') {
         return (
             <div className="flex items-center justify-center py-12">
@@ -241,7 +236,6 @@ export default function MainFlow() {
                 optInOpen={state.optInOpen}
                 alreadyOptedIn={state.alreadyOptedIn}
                 onRedo={() => setState({ phase: 'idle' })}
-                onOptIn={handleOptIn}
             />
             <div id="optin-section" className="mt-8">
                 {state.optInOpen && (

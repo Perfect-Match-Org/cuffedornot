@@ -15,7 +15,6 @@ interface VerdictCardProps {
     optInOpen: boolean;
     alreadyOptedIn: boolean;
     onRedo: () => void;
-    onOptIn: () => void;
 }
 
 const INSUFFICIENT = '???';
@@ -75,7 +74,6 @@ export default function VerdictCard({
     optInOpen,
     alreadyOptedIn,
     onRedo,
-    onOptIn,
 }: VerdictCardProps) {
     const [currentYear, setCurrentYear] = useState<number | null>(null);
     useEffect(() => { setCurrentYear(new Date().getFullYear()); }, []);
@@ -249,10 +247,10 @@ export default function VerdictCard({
                                         { axis: 'Acousticness', value: Math.round(result.audioFeatures.acousticness * 100) },
                                     ]}
                                 >
-                                    <PolarGrid stroke="#e5e7eb" />
+                                    <PolarGrid stroke="#e5e7eb" strokeWidth={2} />
                                     <PolarAngleAxis
                                         dataKey="axis"
-                                        tick={{ fontSize: 11, fontFamily: 'Work Sans', fill: '#6b7280' }}
+                                        tick={{ fontSize: 11, fontFamily: 'Work Sans', fill: '#6b7280', fontWeight: 600 }}
                                     />
                                     <Radar
                                         dataKey="value"
@@ -273,7 +271,7 @@ export default function VerdictCard({
 
                     {/* Section 4 — Genre Diversity */}
                     {result.genreDiversity !== undefined && result.genreDiversity > 0 && (
-                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5 text-center">
+                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white shadow-[4px_4px_0px_#C5E1EF] p-5 text-center">
                             {(() => {
                                 const tier = getDiversityTier(result.genreDiversity);
                                 return (
@@ -295,7 +293,7 @@ export default function VerdictCard({
 
                     {/* Section 5 — Music Age */}
                     {result.audioFeatures && result.audioFeatures.avgTrackAgeYears > 0 && (
-                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5 text-center">
+                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white shadow-[4px_4px_0px_#C5E1EF] p-5 text-center">
                             {(() => {
                                 const musicAgeYear = (currentYear ?? new Date().getFullYear()) - Math.round(result.audioFeatures.avgTrackAgeYears);
                                 return (
@@ -325,7 +323,7 @@ export default function VerdictCard({
 
                     {/* Section 7 — Evidence Bullets */}
                     {result.evidenceBullets.length > 0 && (
-                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white p-5">
+                        <div className="rounded-2xl border-2 border-pmblue2-500 bg-white shadow-[4px_4px_0px_#C5E1EF] p-5">
                             <h3 className="font-dela-gothic text-sm text-gray-500 uppercase tracking-wide mb-3">
                                 The Data
                             </h3>
@@ -432,10 +430,10 @@ export default function VerdictCard({
             )}
 
             {/* Actions */}
-            <div className="flex flex-col items-center gap-3 pt-2">
+            <div className="flex flex-col items-center gap-4 pt-4 pb-2 w-full max-w-xs mx-auto">
                 <button
                     onClick={onRedo}
-                    className="min-h-[44px] rounded-full border-2 border-pmblue-500 px-6 py-2 font-work-sans text-sm text-pmblue-500 shadow-[3px_3px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_rgba(36,67,141,1)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none cursor-pointer"
+                    className="flex-1 w-full min-h-[48px] rounded-full border-2 border-pmblue-500 bg-white px-6 py-2 font-work-sans text-sm font-semibold text-pmblue-500 shadow-[4px_4px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_rgba(36,67,141,1)] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none cursor-pointer"
                 >
                     Try a different URL
                 </button>
@@ -444,28 +442,24 @@ export default function VerdictCard({
                     <button
                         onClick={handleShare}
                         disabled={isSharing}
-                        className="min-h-[44px] rounded-full border-2 border-pmred-500 px-6 py-2 font-work-sans text-sm text-pmred-500 shadow-[3px_3px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[1px_1px_0px_0px_rgba(36,67,141,1)] active:translate-x-[3px] active:translate-y-[3px] active:shadow-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:shadow-[3px_3px_0px_0px_rgba(36,67,141,1)]"
+                        className="flex-1 w-full min-h-[48px] rounded-full border-2 border-pmred-500 bg-white px-6 py-2 font-work-sans text-sm font-semibold text-pmred-500 shadow-[4px_4px_0px_0px_#f30020] transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[2px_2px_0px_0px_#f30020] active:translate-x-[4px] active:translate-y-[4px] active:shadow-none cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed disabled:translate-x-0 disabled:translate-y-0 disabled:shadow-[4px_4px_0px_0px_#f30020]"
                     >
                         {shareFeedback ?? (isSharing ? 'Sharing...' : 'Share your result')}
                     </button>
                 )}
-
-                {optInOpen && !alreadyOptedIn && (
-                    <button
-                        onClick={onOptIn}
-                        className="min-h-[48px] w-full max-w-xs rounded-full border-4 border-pmblue-500 bg-white px-8 py-3 font-work-sans font-semibold text-pmred-500 shadow-[6px_6px_0px_0px_rgba(36,67,141,1)] transition-all hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[2px_2px_0px_0px_rgba(36,67,141,1)] active:translate-x-[6px] active:translate-y-[6px] active:shadow-none cursor-pointer"
-                    >
-                        Want to get matched?
-                    </button>
-                )}
-
-
-                {!optInOpen && (
-                    <p className="font-work-sans text-sm text-gray-500 text-center">
-                        Matching is closed &mdash; check back at 8pm on April 1!
-                    </p>
-                )}
             </div>
+
+            {optInOpen && !alreadyOptedIn && (
+                <p className="font-work-sans text-sm text-gray-500 text-center w-full max-w-sm mx-auto mt-2 leading-relaxed">
+                    Ready to find your musical soulmate? Scroll down to fill out your profile and enter the matching pool.
+                </p>
+            )}
+
+            {!optInOpen && (
+                <p className="font-work-sans text-sm text-gray-500 text-center w-full max-w-sm mx-auto mt-2">
+                    Matching is closed &mdash; check back at 8pm on April 1!
+                </p>
+            )}
         </div>
     );
 }

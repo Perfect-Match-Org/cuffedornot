@@ -35,7 +35,7 @@ export default function Layout({ children }: LayoutProps) {
                         </button>
                     )}
                 </nav>
-                <main>{children}</main>
+                <main className="overflow-x-hidden">{children}</main>
             </div>
             <Analytics />
             <SpeedInsights />
