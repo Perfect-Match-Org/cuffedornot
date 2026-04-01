@@ -43,6 +43,7 @@ export default function ProfileForm({
     onOptedOut,
 }: ProfileFormProps) {
     const [formState, setFormState] = useState<FormState>('idle');
+    const [localFirstName, setLocalFirstName] = useState(firstName || '');
     const [genderIdentity, setGenderIdentity] = useState(initialProfile?.genderIdentity ?? '');
     const [attractionPreference, setAttractionPreference] = useState<string[]>(
         initialProfile?.attractionPreference ?? []
@@ -55,6 +56,7 @@ export default function ProfileForm({
 
     // For new submissions, require the opt-in checkbox
     const canSubmitNew =
+        localFirstName.trim() !== '' &&
         genderIdentity !== '' &&
         attractionPreference.length > 0 &&
         optInChecked &&
@@ -62,6 +64,7 @@ export default function ProfileForm({
 
     // For edits, no opt-in checkbox needed
     const canSubmitEdit =
+        localFirstName.trim() !== '' &&
         genderIdentity !== '' &&
         attractionPreference.length > 0 &&
         formState === 'editing';
@@ -82,7 +85,7 @@ export default function ProfileForm({
             const res = await fetch('/api/profile', {
                 method: isEdit ? 'PUT' : 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ genderIdentity, attractionPreference, openToPlatonic }),
+                body: JSON.stringify({ firstName: localFirstName, genderIdentity, attractionPreference, openToPlatonic }),
             });
             if (res.status === 423) {
                 setError('Opt-in has closed.');
@@ -216,14 +219,22 @@ export default function ProfileForm({
             </p>
 
             <form onSubmit={handleSubmit} className="space-y-5">
-                {/* First name (read-only) */}
+                {/* First name */}
                 <div>
-                    <label className="block font-work-sans text-sm font-semibold text-pmblue2-800 mb-1">
-                        First name
+                    <label
+                        htmlFor="firstName"
+                        className="block font-work-sans text-sm font-semibold text-pmblue2-800 mb-1"
+                    >
+                        First name <span className="text-pmred-500">*</span>
                     </label>
-                    <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5 font-work-sans text-gray-700 text-sm">
-                        {firstName || '—'}
-                    </div>
+                    <input
+                        type="text"
+                        id="firstName"
+                        value={localFirstName}
+                        onChange={(e) => setLocalFirstName(e.target.value)}
+                        required
+                        className="w-full rounded-lg border-2 border-pmblue2-500 bg-white px-4 py-2.5 font-work-sans text-sm text-pmblue2-800 focus:outline-none focus:border-pmblue-500"
+                    />
                 </div>
 
                 {/* Gender identity */}

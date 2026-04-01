@@ -20,8 +20,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(423).json({ error: 'OPT_IN_CLOSED' });
     }
 
-    const { genderIdentity, attractionPreference, openToPlatonic } = req.body ?? {};
+    const { firstName, genderIdentity, attractionPreference, openToPlatonic } = req.body ?? {};
 
+    if (typeof firstName !== 'string' || firstName.trim() === '') {
+        return res.status(400).json({ error: 'INVALID_INPUT', field: 'firstName' });
+    }
     if (typeof genderIdentity !== 'string' || genderIdentity.trim() === '') {
         return res.status(400).json({ error: 'INVALID_INPUT', field: 'genderIdentity' });
     }
@@ -30,6 +33,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     const setFields: Record<string, unknown> = {
+        firstName: firstName.trim(),
         profile: {
             genderIdentity: genderIdentity.trim(),
             attractionPreference,
