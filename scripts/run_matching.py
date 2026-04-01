@@ -262,6 +262,7 @@ def run_romantic_pass(
         if (
             score_matrix[r, c] >= 0
             and r != c
+            and valid_romantic_pair(users[r], users[c])
             and r not in matched
             and c not in matched
         ):
@@ -346,7 +347,7 @@ def run_small_pool(users: list[dict]) -> list[MatchResult]:
     cost = np.zeros((n, n))
     for i in range(n):
         for j in range(n):
-            if i == j:
+            if i == j or not valid_romantic_pair(users[i], users[j]):
                 cost[i, j] = 1e9
             elif users[i]["_mq"] == users[j]["_mq"]:
                 cost[i, j] = 0.0   # same quadrant → best (cost minimizer)
@@ -357,7 +358,7 @@ def run_small_pool(users: list[dict]) -> list[MatchResult]:
     matched: set[int] = set()
     matches: list[MatchResult] = []
     for r, c in zip(row_ind, col_ind):
-        if r not in matched and c not in matched and r != c:
+        if r not in matched and c not in matched and r != c and valid_romantic_pair(users[r], users[c]):
             same_q = users[r]["_mq"] == users[c]["_mq"]
             matches.append(MatchResult(
                 email_a=users[r]["email"],
