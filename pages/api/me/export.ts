@@ -4,6 +4,8 @@ import { authOptions } from '../auth/[...nextauth]';
 import { connect, CuffedOrNotUser } from '@/database';
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+    res.setHeader('Cache-Control', 'no-store');
+
     if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
@@ -20,19 +22,27 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ error: 'USER_NOT_FOUND' });
     }
 
-    // Strip internal MongoDB fields and operational-only fields
-    const { _id, __v, unmatchable, ...doc } = user as Record<string, unknown>;
-
-    // Clean up spotifyData internals
-    if (doc.spotifyData && typeof doc.spotifyData === 'object') {
-        const spotify = { ...(doc.spotifyData as Record<string, unknown>) };
-        delete spotify.lastAttemptAt;
-        doc.spotifyData = spotify;
-    }
+    const { lastAttemptAt, ...safeSpotifyData } = (user.spotifyData ?? {});
+    const scores = user.scores;
 
     const exportData = {
         exportedAt: new Date().toISOString(),
-        ...doc,
+        email: user.email,
+        firstName: user.firstName ?? null,
+        profileComplete: user.profileComplete,
+        optIn: user.optIn,
+        profile: user.profile ?? null,
+        scores: scores ? {
+            cuffedOrNotScore: scores.cuffedOrNotScore,
+            verdict: scores.verdict,
+            tagline: scores.tagline,
+            confidence: scores.confidence,
+            genreDiversity: scores.genreDiversity,
+            redFlagArtists: scores.redFlagArtists,
+            listeningPersonality: scores.listeningPersonality,
+            roastLines: scores.roastLines,
+        } : null,
+        spotifyData: user.spotifyData ? safeSpotifyData : null,
     };
 
     // If ?download query param is present, trigger file download
