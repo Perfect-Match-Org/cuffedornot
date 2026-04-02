@@ -22,8 +22,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         return res.status(404).json({ error: 'USER_NOT_FOUND' });
     }
 
-    const { lastAttemptAt, ...safeSpotifyData } = (user.spotifyData ?? {});
     const scores = user.scores;
+    const sd = user.spotifyData;
 
     const exportData = {
         exportedAt: new Date().toISOString(),
@@ -42,7 +42,12 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
             listeningPersonality: scores.listeningPersonality,
             roastLines: scores.roastLines,
         } : null,
-        spotifyData: user.spotifyData ? safeSpotifyData : null,
+        spotifyData: sd ? {
+            collectedAt: sd.collectedAt,
+            shortTerm: sd.shortTerm,
+            mediumTerm: sd.mediumTerm,
+            longTerm: sd.longTerm,
+        } : null,
     };
 
     // If ?download query param is present, trigger file download
