@@ -140,7 +140,7 @@ export default function ProfileForm({
             <div className="rounded-2xl border-2 border-pmpink2-500 bg-white shadow-[4px_4px_0px_#FFC8E3] p-6 text-center">
                 <p className="font-dela-gothic text-pmblue2-800 text-2xl mb-2">You&apos;re in!</p>
                 <p className="font-work-sans text-gray-600 text-sm mb-5">
-                    Check back April 1 at 8pm to see your match.
+                    Check back April 5 at 8pm to see your match.
                 </p>
                 <button
                     onClick={handleOptOut}
@@ -184,7 +184,7 @@ export default function ProfileForm({
             <div className="rounded-2xl border-2 border-pmpink2-500 bg-white shadow-[4px_4px_0px_#FFC8E3] p-6 text-center">
                 <p className="font-dela-gothic text-pmblue2-800 text-2xl mb-2">You&apos;re in!</p>
                 <p className="font-work-sans text-gray-600 text-sm mb-5">
-                    Check back April 1 at 8pm to see your match.
+                    Check back April 5 at 8pm to see your match.
                 </p>
                 <div className="flex justify-center gap-4">
                     <button

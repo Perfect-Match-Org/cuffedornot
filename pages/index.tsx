@@ -42,7 +42,7 @@ const steps = [
     {
         num: '3',
         title: 'Optional: Get Matched',
-        desc: 'Opt in to be matched with your musical soulmate on April 1.',
+        desc: 'Opt in to be matched with your musical soulmate on April 5.',
     },
 ];
 

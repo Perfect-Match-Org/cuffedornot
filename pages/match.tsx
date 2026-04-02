@@ -40,7 +40,7 @@ interface MatchData {
 
 // ── Countdown ─────────────────────────────────────────────────────────────────
 
-const REVEAL_TIME = new Date('2026-04-01T20:00:00-04:00').getTime();
+const REVEAL_TIME = new Date('2026-04-05T20:00:00-04:00').getTime();
 
 function useCountdown() {
     const [remaining, setRemaining] = useState(0);
@@ -110,7 +110,7 @@ function CountdownScreen({ remaining }: { remaining: number }) {
 
             <div className="text-center">
                 <p className="font-work-sans text-gray-500 text-sm mb-2">
-                    Come back April 1 at 8pm
+                    Come back April 5 at 8pm
                 </p>
                 <p className={`font-dela-gothic text-pmred-500 ${remaining > 0 ? 'text-5xl tabular-nums' : 'text-2xl'}`}>
                     {remaining > 0 ? formatCountdown(remaining) : 'Your match is almost ready...'}

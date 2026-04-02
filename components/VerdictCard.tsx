@@ -457,7 +457,7 @@ export default function VerdictCard({
 
             {!optInOpen && (
                 <p className="font-work-sans text-sm text-gray-500 text-center w-full max-w-sm mx-auto mt-2">
-                    Matching is closed &mdash; check back at 8pm on April 1!
+                    Matching is closed &mdash; check back at 8pm on April 5!
                 </p>
             )}
         </div>
